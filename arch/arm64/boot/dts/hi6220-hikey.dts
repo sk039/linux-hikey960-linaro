@@ -55,6 +55,11 @@
 			no-map;
 			reg = <0x0 0x06dff000 0x0 0x00001000>;	/* Mailbox message buf */
 		};
+
+		reboot-reason@05f01000 {
+			no-map;
+			reg = <0x0 0x05f01000 0x0 0x00001000>;
+		};
 	};
 
 	smb {
@@ -209,6 +214,15 @@
 		/* WLAN card specific delay */
 		startup-delay-us = <70000>;
 		enable-active-high;
+	};
+
+	reboot_reason: reboot-reason@05f01000 {
+		compatible		= "linux,reboot-reason-sram";
+		reg			= <0x0 0x05F01000 0x0 0x4>;
+		reason,none		= <0x77665501>;
+		reason,bootloader	= <0x77665500>;
+		reason,recovery		= <0x77665502>;
+		reason,oem		= <0x6f656d00>;
 	};
 
         hisi-ion@0 {
