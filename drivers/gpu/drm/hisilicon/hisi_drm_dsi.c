@@ -33,8 +33,6 @@
 
 #define connector_to_dsi(connector) \
 	container_of(connector, struct hisi_dsi, connector)
-#define encoder_to_dsi(encoder) \
-	container_of(encoder, struct hisi_dsi, base.base)
 
 #define DEFAULT_MIPI_CLK_RATE   19200000
 #define MAX_TX_ESC_CLK    (10)
@@ -44,64 +42,6 @@
 #define DEFAULT_MIPI_CLK_PERIOD_PS (1000000000 / (DEFAULT_MIPI_CLK_RATE / 1000))
 
 u8 *reg_base_mipi_dsi;
-
-struct mipi_dsi_phy_register {
-	u32 clk_t_lpx;
-	u32 clk_t_hs_prepare;
-	u32 clk_t_hs_zero;
-	u32 clk_t_hs_trial;
-	u32 clk_t_wakeup;
-	u32 data_t_lpx;
-	u32 data_t_hs_prepare;
-	u32 data_t_hs_zero;
-	u32 data_t_hs_trial;
-	u32 data_t_ta_go;
-	u32 data_t_ta_get;
-	u32 data_t_wakeup;
-	u32 rg_hstx_ckg_sel;
-	u32 rg_pll_fbd_div5f;
-	u32 rg_pll_fbd_div1f;
-	u32 rg_pll_fbd_2p;
-	u32 rg_pll_enbwt;
-	u32 rg_pll_fbd_p;
-	u32 rg_pll_fbd_s;
-	u32 rg_pll_pre_div1p;
-	u32 rg_pll_pre_p;
-	u32 rg_pll_vco_750M;
-	u32 rg_pll_lpf_rs;
-	u32 rg_pll_lpf_cs;
-	u32 phy_clklp2hs_time;
-	u32 phy_clkhs2lp_time;
-	u32 phy_lp2hs_time;
-	u32 phy_hs2lp_time;
-	u32 clk_to_data_delay;
-	u32 data_to_clk_delay;
-	u32 lane_byte_clk_kHz;
-	u32 clk_division;
-	u32 burst_mode;
-};
-
-struct hisi_dsi {
-	struct drm_encoder_slave base;
-	struct drm_connector connector;
-	struct i2c_client *client;
-	struct drm_i2c_encoder_driver *drm_i2c_driver;
-	struct clk *dsi_cfg_clk;
-	struct videomode vm;
-	int nominal_pixel_clock_kHz;
-
-	u8 __iomem *reg_base;
-	u8 color_mode;
-
-	u32 lanes;
-	u32 format;
-	struct mipi_dsi_phy_register phyreg;
-	u32 date_enable_pol;
-	u32 vc;
-	u32 mode_flags;
-
-	bool enable;
-};
 
 enum {
 	DSI_16BITS_1 = 0,
@@ -152,7 +92,7 @@ struct dsi_phy_seq_info dphy_seq_info[] = {
  *               +hsync +vsync
  */
 static struct drm_display_mode mode_720p_canned = {
-	.name		= "720p60",
+	.name		= "1280x720",
 	.vrefresh	= 60,
 	.clock		= 74250,
 	.hdisplay	= 1280,
@@ -201,22 +141,6 @@ static int hisi_get_default_modes(struct drm_connector *connector)
 	if (!mode) {
 		DRM_ERROR("failed to create a new display mode\n");
 	}
-	drm_mode_set_name(mode);
-	drm_mode_probed_add(connector, mode);
-
-	/*
-	 * 1280x720@60: 720P with some timing parameters adjusted.
-	 * Adjust timings to let output more stable.
-	 */
-	mode = drm_mode_duplicate(connector->dev, &mode_720p_canned);
-	if (!mode) {
-		DRM_ERROR("failed to create a new display mode\n");
-	}
-	mode->clock = 75000;
-	mode->hsync_start = 1500;
-	mode->hsync_end = 1540;
-	mode->vsync_start = 740;
-	mode->vsync_end = 745;
 	drm_mode_probed_add(connector, mode);
 
 	/*
@@ -228,7 +152,7 @@ static int hisi_get_default_modes(struct drm_connector *connector)
 	}
 	drm_mode_probed_add(connector, mode);
 
-	return 3;
+	return 2;
 }
 
 static inline void set_reg(u8 *addr, u32 val, u32 bw, u32 bs)
@@ -882,24 +806,20 @@ static void hisi_drm_encoder_mode_set(struct drm_encoder *encoder,
 
 	DRM_DEBUG_DRIVER("enter.\n");
 	vm->pixelclock = adj_mode->clock;
-	dsi->nominal_pixel_clock_kHz = adj_mode->clock;
+	dsi->nominal_pixel_clock_kHz = mode->clock;
 
-	vm->hactive = adj_mode->hdisplay;
-	vm->vactive = adj_mode->vdisplay;
-	vm->vfront_porch = adj_mode->vsync_start - adj_mode->vdisplay;
-	vm->vback_porch = adj_mode->vtotal - adj_mode->vsync_end;
-	vm->vsync_len = adj_mode->vsync_end - adj_mode->vsync_start;
-	vm->hfront_porch = adj_mode->hsync_start - adj_mode->hdisplay;
-	vm->hback_porch = adj_mode->htotal - adj_mode->hsync_end;
-	vm->hsync_len = adj_mode->hsync_end - adj_mode->hsync_start;
+	vm->hactive = mode->hdisplay;
+	vm->vactive = mode->vdisplay;
+	vm->vfront_porch = mode->vsync_start - mode->vdisplay;
+	vm->vback_porch = mode->vtotal - mode->vsync_end;
+	vm->vsync_len = mode->vsync_end - mode->vsync_start;
+	vm->hfront_porch = mode->hsync_start - mode->hdisplay;
+	vm->hback_porch = mode->htotal - mode->hsync_end;
+	vm->hsync_len = mode->hsync_end - mode->hsync_start;
 
-	dsi->lanes = 3 + !!(vm->pixelclock >= 115000);
+	dsi->lanes = 3 + !!(vm->pixelclock > 115000);
 
 	dphy_freq_kHz = vm->pixelclock * 24 / dsi->lanes;
-	/* this avoids a less-compatible DSI rate with 1.2GHz px PLL */
-	if (mode->clock == 75000)
-		dphy_freq_kHz = 640000;
-
 	set_dsi_phy_rate_equal_or_faster(&dphy_freq_kHz, &dsi->phyreg);
 
 	vm->flags = 0;
@@ -935,6 +855,16 @@ static void hisi_drm_encoder_disable(struct drm_encoder *encoder)
 	DRM_DEBUG_DRIVER("enter.\n");
 	hisi_drm_encoder_dpms(encoder, DRM_MODE_DPMS_OFF);
 	DRM_DEBUG_DRIVER("exit success.\n");
+}
+
+static int hisi_dsi_reset(struct drm_encoder *encoder)
+{
+	struct hisi_dsi *dsi = encoder_to_dsi(encoder);
+
+	if (dsi->enable)
+		return mipi_init(dsi);
+
+	return 0;
 }
 
 static struct drm_encoder_helper_funcs hisi_encoder_helper_funcs = {
@@ -1032,12 +962,12 @@ static int hisi_drm_connector_mode_valid(struct drm_connector *connector,
 	 * others will clear prefer
 	 */
 	vrate = mode->vrefresh = drm_mode_vrefresh(mode);
-	if ((mode->hdisplay == 1920 && mode->vdisplay == 1200 && vrate == 59) ||
+	if ((mode->hdisplay == 1920 && mode->vdisplay == 1200 && vrate == 60) ||
 	    (mode->hdisplay == 1920 && mode->vdisplay == 1080) ||
-	    (mode->hdisplay == 1680 && mode->vdisplay == 1050 && vrate == 59) ||
+	    (mode->hdisplay == 1680 && mode->vdisplay == 1050 && vrate == 60) ||
 	    (mode->hdisplay == 1280 && mode->vdisplay == 1024 && vrate == 60) ||
 	    (mode->hdisplay == 1280 && mode->vdisplay == 720 &&
-		(vrate == 60 || vrate == 59 || vrate == 50)) ||
+		(vrate == 60 || vrate == 50)) ||
 	    (mode->hdisplay == 800 && mode->vdisplay == 600 && vrate == 60))
 		mode->type |= DRM_MODE_TYPE_PREFERRED;
 	else
@@ -1095,9 +1025,7 @@ void hisi_drm_connector_create(struct drm_device *dev, struct hisi_dsi *dsi)
 	drm_connector_helper_add(connector, &hisi_dsi_connector_helper_funcs);
 	drm_connector_register(connector);
 	drm_mode_connector_attach_encoder(connector, encoder);
-#ifndef CONFIG_DRM_HISI_FBDEV
 	drm_reinit_primary_mode_group(dev);
-#endif
 	DRM_DEBUG_DRIVER("exit success.\n");
 }
 
@@ -1166,6 +1094,7 @@ static int hisi_dsi_probe(struct platform_device *pdev)
 	dsi->lanes = 3;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
+	dsi->reset = hisi_dsi_reset;
 
 	ret = hisi_drm_encoder_create(dev, dsi);
 	if (ret) {
