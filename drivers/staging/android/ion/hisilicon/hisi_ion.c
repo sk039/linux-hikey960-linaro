@@ -24,7 +24,7 @@ struct hisi_ion_name_id_table {
 	unsigned int id;
 };
 
-static struct hisi_ion_name_id_table name_id_table[] __initdata = {
+static struct hisi_ion_name_id_table name_id_table[] = {
 	{"fb", ION_FB_HEAP_ID},
 	{"vpu", ION_VPU_HEAP_ID},
 	{"jpu", ION_JPU_HEAP_ID},
@@ -84,7 +84,7 @@ struct ion_device *get_ion_device(void)
 }
 EXPORT_SYMBOL(get_ion_device);
 
-static int __init get_id_by_name(const char *name, unsigned int *id)
+static int get_id_by_name(const char *name, unsigned int *id)
 {
 	int i, n;
 
@@ -99,7 +99,7 @@ static int __init get_id_by_name(const char *name, unsigned int *id)
 	return -1;
 }
 
-static int __init get_type_by_name(const char *name, enum ion_heap_type *type)
+static int get_type_by_name(const char *name, enum ion_heap_type *type)
 {
 	int i, n;
 
@@ -115,7 +115,7 @@ static int __init get_type_by_name(const char *name, enum ion_heap_type *type)
 	return -1;
 }
 
-static int __init hisi_ion_setup_platform_data(struct platform_device *dev)
+static int hisi_ion_setup_platform_data(struct platform_device *dev)
 {
 	struct device_node *node, *np;
 	const char *heap_name;
@@ -174,7 +174,7 @@ static int __init hisi_ion_setup_platform_data(struct platform_device *dev)
 	return 0;
 }
 
-static int __init hisi_ion_probe(struct platform_device *pdev)
+static int hisi_ion_probe(struct platform_device *pdev)
 {
 	int i, err;
 	struct ion_heap *heap;
