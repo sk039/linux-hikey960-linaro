@@ -29,6 +29,7 @@
 #include <asm/asm-offsets.h>
 #include <asm/cache.h>
 #include <asm/cputype.h>
+#include <asm/kernel-pgtable.h>
 #include <asm/memory.h>
 #include <asm/thread_info.h>
 #include <asm/pgtable-hwdef.h>
@@ -46,35 +47,8 @@
 #error TEXT_OFFSET must be less than 2MB
 #endif
 
-#ifdef CONFIG_ARM64_64K_PAGES
-#define BLOCK_SHIFT	PAGE_SHIFT
-#define BLOCK_SIZE	PAGE_SIZE
-#define TABLE_SHIFT	PMD_SHIFT
-#else
-#define BLOCK_SHIFT	SECTION_SHIFT
-#define BLOCK_SIZE	SECTION_SIZE
-#define TABLE_SHIFT	PUD_SHIFT
-#endif
-
 #define KERNEL_START	_text
 #define KERNEL_END	_end
-
-/*
- * Initial memory map attributes.
- */
-#ifndef CONFIG_SMP
-#define PTE_FLAGS	PTE_TYPE_PAGE | PTE_AF
-#define PMD_FLAGS	PMD_TYPE_SECT | PMD_SECT_AF
-#else
-#define PTE_FLAGS	PTE_TYPE_PAGE | PTE_AF | PTE_SHARED
-#define PMD_FLAGS	PMD_TYPE_SECT | PMD_SECT_AF | PMD_SECT_S
-#endif
-
-#ifdef CONFIG_ARM64_64K_PAGES
-#define MM_MMUFLAGS	PTE_ATTRINDX(MT_NORMAL) | PTE_FLAGS
-#else
-#define MM_MMUFLAGS	PMD_ATTRINDX(MT_NORMAL) | PMD_FLAGS
-#endif
 
 /*
  * Kernel startup entry point.
@@ -318,7 +292,7 @@ ENDPROC(__vet_fdt)
 	.macro	create_pgd_entry, tbl, virt, tmp1, tmp2
 	create_table_entry \tbl, \virt, PGDIR_SHIFT, PTRS_PER_PGD, \tmp1, \tmp2
 #if SWAPPER_PGTABLE_LEVELS == 3
-	create_table_entry \tbl, \virt, TABLE_SHIFT, PTRS_PER_PTE, \tmp1, \tmp2
+	create_table_entry \tbl, \virt, SWAPPER_TABLE_SHIFT, PTRS_PER_PTE, \tmp1, \tmp2
 #endif
 	.endm
 
@@ -330,15 +304,15 @@ ENDPROC(__vet_fdt)
  * Corrupts:	phys, start, end, pstate
  */
 	.macro	create_block_map, tbl, flags, phys, start, end
-	lsr	\phys, \phys, #BLOCK_SHIFT
-	lsr	\start, \start, #BLOCK_SHIFT
+	lsr	\phys, \phys, #SWAPPER_BLOCK_SHIFT
+	lsr	\start, \start, #SWAPPER_BLOCK_SHIFT
 	and	\start, \start, #PTRS_PER_PTE - 1	// table index
-	orr	\phys, \flags, \phys, lsl #BLOCK_SHIFT	// table entry
-	lsr	\end, \end, #BLOCK_SHIFT
+	orr	\phys, \flags, \phys, lsl #SWAPPER_BLOCK_SHIFT	// table entry
+	lsr	\end, \end, #SWAPPER_BLOCK_SHIFT
 	and	\end, \end, #PTRS_PER_PTE - 1		// table end index
 9999:	str	\phys, [\tbl, \start, lsl #3]		// store the entry
 	add	\start, \start, #1			// next entry
-	add	\phys, \phys, #BLOCK_SIZE		// next block
+	add	\phys, \phys, #SWAPPER_BLOCK_SIZE		// next block
 	cmp	\start, \end
 	b.ls	9999b
 	.endm
@@ -361,14 +335,14 @@ __create_page_tables:
 	 * dirty cache lines being evicted.
 	 */
 	mov	x0, x25
-	add	x1, x26, #SWAPPER_DIR_SIZE
+	add	x1, x26, #SWAPPER_DIR_SIZE + RESERVED_TTBR0_SIZE
 	bl	__inval_cache_range
 
 	/*
 	 * Clear the idmap and swapper page tables.
 	 */
 	mov	x0, x25
-	add	x6, x26, #SWAPPER_DIR_SIZE
+	add	x6, x26, #SWAPPER_DIR_SIZE + RESERVED_TTBR0_SIZE
 1:	stp	xzr, xzr, [x0], #16
 	stp	xzr, xzr, [x0], #16
 	stp	xzr, xzr, [x0], #16
@@ -376,7 +350,7 @@ __create_page_tables:
 	cmp	x0, x6
 	b.lo	1b
 
-	ldr	x7, =MM_MMUFLAGS
+	ldr	x7, =SWAPPER_MM_MMUFLAGS
 
 	/*
 	 * Create the identity mapping.
@@ -460,7 +434,7 @@ __create_page_tables:
 	 * tables again to remove any speculatively loaded cache lines.
 	 */
 	mov	x0, x25
-	add	x1, x26, #SWAPPER_DIR_SIZE
+	add	x1, x26, #SWAPPER_DIR_SIZE + RESERVED_TTBR0_SIZE
 	dmb	sy
 	bl	__inval_cache_range
 
@@ -474,15 +448,18 @@ ENDPROC(__create_page_tables)
  */
 	.set	initial_sp, init_thread_union + THREAD_START_SP
 __mmap_switched:
-	adr_l	x6, __bss_start
-	adr_l	x7, __bss_stop
+	// Clear BSS
+	adr_l	x0, __bss_start
+	mov	x1, xzr
+	adr_l	x2, __bss_stop
+	sub	x2, x2, x0
+	bl	__pi_memset
+	dsb	ishst				// Make zero page visible to PTW
 
-1:	cmp	x6, x7
-	b.hs	2f
-	str	xzr, [x6], #8			// Clear BSS
-	b	1b
-2:
 	adr_l	sp, initial_sp, x4
+	mov	x4, sp
+	and	x4, x4, #~(THREAD_SIZE - 1)
+	msr	sp_el0, x4			// Save thread_info
 	str_l	x21, __fdt_pointer, x5		// Save FDT pointer
 	str_l	x24, memstart_addr, x6		// Save PHYS_OFFSET
 	mov	x29, #0
@@ -621,7 +598,6 @@ ENTRY(__boot_cpu_mode)
 	.long	BOOT_CPU_MODE_EL1
 	.popsection
 
-#ifdef CONFIG_SMP
 	/*
 	 * This provides a "holding pen" for platforms to hold all secondary
 	 * cores are held until we're ready for them to initialise.
@@ -666,10 +642,11 @@ ENDPROC(secondary_startup)
 ENTRY(__secondary_switched)
 	ldr	x0, [x21]			// get secondary_data.stack
 	mov	sp, x0
+	and	x0, x0, #~(THREAD_SIZE - 1)
+	msr	sp_el0, x0			// save thread_info
 	mov	x29, #0
 	b	secondary_start_kernel
 ENDPROC(__secondary_switched)
-#endif	/* CONFIG_SMP */
 
 /*
  * Enable the MMU.
@@ -686,6 +663,14 @@ __enable_mmu:
 	msr	ttbr1_el1, x26			// load TTBR1
 	isb
 	msr	sctlr_el1, x0
+	isb
+	/*
+	 * Invalidate the local I-cache so that any instructions fetched
+	 * speculatively from the PoC are discarded, since they may have
+	 * been dynamically patched at the PoU.
+	 */
+	ic	iallu
+	dsb	nsh
 	isb
 	br	x27
 ENDPROC(__enable_mmu)

@@ -46,7 +46,7 @@ u64 idmap_t0sz = TCR_T0SZ(VA_BITS);
  * Empty_zero_page is a special page that is used for zero-initialized data
  * and COW.
  */
-struct page *empty_zero_page;
+unsigned long empty_zero_page[PAGE_SIZE / sizeof(unsigned long)] __page_aligned_bss;
 EXPORT_SYMBOL(empty_zero_page);
 
 pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
@@ -436,39 +436,18 @@ void fixup_init(void)
  */
 void __init paging_init(void)
 {
-	void *zero_page;
-
 	map_mem();
 	fixup_executable();
 
-	/* allocate the zero page. */
-	zero_page = early_alloc(PAGE_SIZE);
-
 	bootmem_init();
-
-	empty_zero_page = virt_to_page(zero_page);
-
-	/* Ensure the zero page is visible to the page table walker */
-	dsb(ishst);
 
 	/*
 	 * TTBR0 is only used for the identity mapping at this stage. Make it
 	 * point to zero page to avoid speculatively fetching new entries.
 	 */
 	cpu_set_reserved_ttbr0();
-	flush_tlb_all();
+	local_flush_tlb_all();
 	cpu_set_default_tcr_t0sz();
-}
-
-/*
- * Enable the identity mapping to allow the MMU disabling.
- */
-void setup_mm_for_reboot(void)
-{
-	cpu_set_reserved_ttbr0();
-	flush_tlb_all();
-	cpu_set_idmap_tcr_t0sz();
-	cpu_switch_mm(idmap_pg_dir, &init_mm);
 }
 
 /*

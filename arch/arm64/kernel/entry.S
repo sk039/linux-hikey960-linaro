@@ -21,13 +21,16 @@
 #include <linux/init.h>
 #include <linux/linkage.h>
 
-#include <asm/alternative-asm.h>
+#include <asm/alternative.h>
 #include <asm/assembler.h>
 #include <asm/asm-offsets.h>
 #include <asm/cpufeature.h>
 #include <asm/errno.h>
 #include <asm/esr.h>
+#include <asm/memory.h>
+#include <asm/ptrace.h>
 #include <asm/thread_info.h>
+#include <asm/uaccess.h>
 #include <asm/unistd.h>
 
 /*
@@ -88,15 +91,51 @@
 
 	.if	\el == 0
 	mrs	x21, sp_el0
-	get_thread_info tsk			// Ensure MDSCR_EL1.SS is clear,
+	mov	tsk, sp
+	and	tsk, tsk, #~(THREAD_SIZE - 1)	// Ensure MDSCR_EL1.SS is clear,
 	ldr	x19, [tsk, #TI_FLAGS]		// since we can unmask debug
 	disable_step_tsk x19, x20		// exceptions when scheduling.
 	.else
 	add	x21, sp, #S_FRAME_SIZE
-	.endif
+	get_thread_info tsk
+	/* Save the task's original addr_limit and set USER_DS (TASK_SIZE_64) */
+	ldr	x20, [tsk, #TI_ADDR_LIMIT]
+	str	x20, [sp, #S_ORIG_ADDR_LIMIT]
+	mov	x20, #TASK_SIZE_64
+	str	x20, [tsk, #TI_ADDR_LIMIT]
+	ALTERNATIVE(nop, SET_PSTATE_UAO(0), ARM64_HAS_UAO, CONFIG_ARM64_UAO)
+	.endif /* \el == 0 */
 	mrs	x22, elr_el1
 	mrs	x23, spsr_el1
 	stp	lr, x21, [sp, #S_LR]
+
+#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+	/*
+	 * Set the TTBR0 PAN bit in SPSR. When the exception is taken from
+	 * EL0, there is no need to check the state of TTBR0_EL1 since
+	 * accesses are always enabled.
+	 * Note that the meaning of this bit differs from the ARMv8.1 PAN
+	 * feature as all TTBR0_EL1 accesses are disabled, not just those to
+	 * user mappings.
+	 */
+alternative_if_not ARM64_HAS_PAN
+	nop
+alternative_else
+	b	1f				// skip TTBR0 PAN
+alternative_endif
+
+	.if	\el != 0
+	mrs	x21, ttbr0_el1
+	tst	x21, #0xffff << 48		// Check for the reserved ASID
+	orr	x23, x23, #PSR_PAN_BIT		// Set the emulated PAN in the saved SPSR
+	b.eq	1f				// TTBR0 access already disabled
+	and	x23, x23, #~PSR_PAN_BIT		// Clear the emulated PAN in the saved SPSR
+	.endif
+
+	uaccess_ttbr0_disable x21
+1:
+#endif
+
 	stp	x22, x23, [sp, #S_PC]
 
 	/*
@@ -108,6 +147,13 @@
 	.endif
 
 	/*
+	 * Set sp_el0 to current thread_info.
+	 */
+	.if	\el == 0
+	msr	sp_el0, tsk
+	.endif
+
+	/*
 	 * Registers that may be useful after this macro is invoked:
 	 *
 	 * x21 - aborted SP
@@ -116,38 +162,70 @@
 	*/
 	.endm
 
-	.macro	kernel_exit, el, ret = 0
+	.macro	kernel_exit, el
+	.if	\el != 0
+	/* Restore the task's original addr_limit. */
+	ldr	x20, [sp, #S_ORIG_ADDR_LIMIT]
+	str	x20, [tsk, #TI_ADDR_LIMIT]
+
+	/* No need to restore UAO, it will be restored from SPSR_EL1 */
+	.endif
+
 	ldp	x21, x22, [sp, #S_PC]		// load ELR, SPSR
 	.if	\el == 0
 	ct_user_enter
+	.endif
+
+#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+	/*
+	 * Restore access to TTBR0_EL1. If returning to EL0, no need for SPSR
+	 * PAN bit checking.
+	 */
+alternative_if_not ARM64_HAS_PAN
+	nop
+alternative_else
+	b	2f				// skip TTBR0 PAN
+alternative_endif
+
+	.if	\el != 0
+	tbnz	x22, #_PSR_PAN_BIT, 1f		// Skip re-enabling TTBR0 access if previously disabled
+	.endif
+
+	uaccess_ttbr0_enable x0
+
+1:
+	.if	\el != 0
+	and	x22, x22, #~PSR_PAN_BIT		// ARMv8.0 CPUs do not understand this bit
+	.endif
+2:
+#endif
+
+	.if	\el == 0
 	ldr	x23, [sp, #S_SP]		// load return stack pointer
 	msr	sp_el0, x23
-
 #ifdef CONFIG_ARM64_ERRATUM_845719
-	alternative_insn						\
-	"nop",								\
-	"tbz x22, #4, 1f",						\
-	ARM64_WORKAROUND_845719
+alternative_if_not ARM64_WORKAROUND_845719
+	nop
+	nop
 #ifdef CONFIG_PID_IN_CONTEXTIDR
-	alternative_insn						\
-	"nop; nop",							\
-	"mrs x29, contextidr_el1; msr contextidr_el1, x29; 1:",		\
-	ARM64_WORKAROUND_845719
-#else
-	alternative_insn						\
-	"nop",								\
-	"msr contextidr_el1, xzr; 1:",					\
-	ARM64_WORKAROUND_845719
+	nop
 #endif
+alternative_else
+	tbz	x22, #4, 1f
+#ifdef CONFIG_PID_IN_CONTEXTIDR
+	mrs	x29, contextidr_el1
+	msr	contextidr_el1, x29
+#else
+	msr contextidr_el1, xzr
+#endif
+1:
+alternative_endif
 #endif
 	.endif
+
 	msr	elr_el1, x21			// set up the return data
 	msr	spsr_el1, x22
-	.if	\ret
-	ldr	x1, [sp, #S_X1]			// preserve x0 (syscall return)
-	.else
 	ldp	x0, x1, [sp, #16 * 0]
-	.endif
 	ldp	x2, x3, [sp, #16 * 1]
 	ldp	x4, x5, [sp, #16 * 2]
 	ldp	x6, x7, [sp, #16 * 3]
@@ -165,11 +243,6 @@
 	ldr	lr, [sp, #S_LR]
 	add	sp, sp, #S_FRAME_SIZE		// restore sp
 	eret					// return to kernel
-	.endm
-
-	.macro	get_thread_info, rd
-	mov	\rd, sp
-	and	\rd, \rd, #~(THREAD_SIZE - 1)	// top of stack
 	.endm
 
 /*
@@ -233,7 +306,7 @@ END(vectors)
  * Invalid mode handlers
  */
 	.macro	inv_entry, el, reason, regsize = 64
-	kernel_entry el, \regsize
+	kernel_entry \el, \regsize
 	mov	x0, sp
 	mov	x1, #\reason
 	mrs	x2, esr_el1
@@ -292,6 +365,8 @@ el1_sync:
 	lsr	x24, x1, #ESR_ELx_EC_SHIFT	// exception class
 	cmp	x24, #ESR_ELx_EC_DABT_CUR	// data abort in EL1
 	b.eq	el1_da
+	cmp	x24, #ESR_ELx_EC_IABT_CUR	// instruction abort in EL1
+	b.eq	el1_ia
 	cmp	x24, #ESR_ELx_EC_SYS64		// configurable trap
 	b.eq	el1_undef
 	cmp	x24, #ESR_ELx_EC_SP_ALIGN	// stack alignment exception
@@ -303,6 +378,11 @@ el1_sync:
 	cmp	x24, #ESR_ELx_EC_BREAKPT_CUR	// debug exception in EL1
 	b.ge	el1_dbg
 	b	el1_inv
+
+el1_ia:
+	/*
+	 * Fall through to the Data abort case
+	 */
 el1_da:
 	/*
 	 * Data abort handling
@@ -349,8 +429,8 @@ el1_inv:
 	// TODO: add support for undefined instructions in kernel mode
 	enable_dbg
 	mov	x0, sp
+	mov	x2, x1
 	mov	x1, #BAD_SYNC
-	mrs	x2, esr_el1
 	b	bad_mode
 ENDPROC(el1_sync)
 
@@ -486,7 +566,7 @@ el0_ia:
 	enable_dbg_and_irq
 	ct_user_exit
 	mov	x0, x26
-	orr	x1, x25, #1 << 24		// use reserved ISS bit for instruction aborts
+	mov	x1, x25
 	mov	x2, sp
 	bl	do_mem_abort
 	b	ret_to_user
@@ -550,7 +630,7 @@ el0_inv:
 	ct_user_exit
 	mov	x0, sp
 	mov	x1, #BAD_SYNC
-	mrs	x2, esr_el1
+	mov	x2, x25
 	bl	bad_mode
 	b	ret_to_user
 ENDPROC(el0_sync)
@@ -600,6 +680,8 @@ ENTRY(cpu_switch_to)
 	ldp	x29, x9, [x8], #16
 	ldr	lr, [x8]
 	mov	sp, x9
+	and	x9, x9, #~(THREAD_SIZE - 1)
+	msr	sp_el0, x9
 	ret
 ENDPROC(cpu_switch_to)
 
@@ -609,17 +691,21 @@ ENDPROC(cpu_switch_to)
  */
 ret_fast_syscall:
 	disable_irq				// disable interrupts
-	ldr	x1, [tsk, #TI_FLAGS]
+	str	x0, [sp, #S_X0]			// returned x0
+	ldr	x1, [tsk, #TI_FLAGS]		// re-check for syscall tracing
+	and	x2, x1, #_TIF_SYSCALL_WORK
+	cbnz	x2, ret_fast_syscall_trace
 	and	x2, x1, #_TIF_WORK_MASK
-	cbnz	x2, fast_work_pending
+	cbnz	x2, work_pending
 	enable_step_tsk x1, x2
-	kernel_exit 0, ret = 1
+	kernel_exit 0
+ret_fast_syscall_trace:
+	enable_irq				// enable interrupts
+	b	__sys_trace_return_skipped	// we already saved x0
 
 /*
  * Ok, we need to do extra processing, enter the slow path.
  */
-fast_work_pending:
-	str	x0, [sp, #S_X0]			// returned x0
 work_pending:
 	tbnz	x1, #TIF_NEED_RESCHED, work_resched
 	/* TIF_SIGPENDING, TIF_NOTIFY_RESUME or TIF_FOREIGN_FPSTATE case */
@@ -643,7 +729,7 @@ ret_to_user:
 	cbnz	x2, work_pending
 	enable_step_tsk x1, x2
 no_work_pending:
-	kernel_exit 0, ret = 0
+	kernel_exit 0
 ENDPROC(ret_to_user)
 
 /*
