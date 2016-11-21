@@ -30,9 +30,11 @@
 #include <linux/highmem.h>
 #include <linux/perf_event.h>
 
+#include <asm/cpufeature.h>
 #include <asm/exception.h>
 #include <asm/debug-monitors.h>
 #include <asm/esr.h>
+#include <asm/sysreg.h>
 #include <asm/system_misc.h>
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>
@@ -191,6 +193,14 @@ out:
 	return fault;
 }
 
+static inline int permission_fault(unsigned int esr)
+{
+	unsigned int ec       = (esr & ESR_ELx_EC_MASK) >> ESR_ELx_EC_SHIFT;
+	unsigned int fsc_type = esr & ESR_ELx_FSC_TYPE;
+
+	return (ec == ESR_ELx_EC_DABT_CUR && fsc_type == ESR_ELx_FSC_PERM);
+}
+
 static int __kprobes do_page_fault(unsigned long addr, unsigned int esr,
 				   struct pt_regs *regs)
 {
@@ -219,9 +229,17 @@ static int __kprobes do_page_fault(unsigned long addr, unsigned int esr,
 
 	if (esr & ESR_LNX_EXEC) {
 		vm_flags = VM_EXEC;
-	} else if ((esr & ESR_EL1_WRITE) && !(esr & ESR_EL1_CM)) {
+	} else if ((esr & ESR_ELx_WNR) && !(esr & ESR_ELx_CM)) {
 		vm_flags = VM_WRITE;
 		mm_flags |= FAULT_FLAG_WRITE;
+	}
+
+	if (permission_fault(esr) && (addr < USER_DS)) {
+		if (get_fs() == KERNEL_DS)
+			panic("Accessing user space memory with fs=KERNEL_DS");
+
+		if (!search_exception_tables(regs->pc))
+			panic("Accessing user space memory outside uaccess.h routines");
 	}
 
 	/*
@@ -531,3 +549,23 @@ asmlinkage int __exception do_debug_exception(unsigned long addr,
 
 	return 0;
 }
+
+#ifdef CONFIG_ARM64_PAN
+void cpu_enable_pan(void *__unused)
+{
+	config_sctlr_el1(SCTLR_EL1_SPAN, 0);
+}
+#endif /* CONFIG_ARM64_PAN */
+
+#ifdef CONFIG_ARM64_UAO
+/*
+ * Kernel threads have fs=KERNEL_DS by default, and don't need to call
+ * set_fs(), devtmpfs in particular relies on this behaviour.
+ * We need to enable the feature at runtime (instead of adding it to
+ * PSR_MODE_EL1h) as the feature may not be implemented by the cpu.
+ */
+void cpu_enable_uao(void *__unused)
+{
+	asm(SET_PSTATE_UAO(1));
+}
+#endif /* CONFIG_ARM64_UAO */

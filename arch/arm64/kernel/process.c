@@ -44,6 +44,7 @@
 #include <linux/personality.h>
 #include <linux/notifier.h>
 
+#include <asm/alternative.h>
 #include <asm/compat.h>
 #include <asm/cacheflush.h>
 #include <asm/fpsimd.h>
@@ -301,7 +302,8 @@ void release_thread(struct task_struct *dead_task)
 
 int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 {
-	fpsimd_preserve_current_state();
+	if (current->mm)
+		fpsimd_preserve_current_state();
 	*dst = *src;
 	return 0;
 }
@@ -344,6 +346,9 @@ int copy_thread(unsigned long clone_flags, unsigned long stack_start,
 	} else {
 		memset(childregs, 0, sizeof(struct pt_regs));
 		childregs->pstate = PSR_MODE_EL1h;
+		if (IS_ENABLED(CONFIG_ARM64_UAO) &&
+		    cpus_have_cap(ARM64_HAS_UAO))
+			childregs->pstate |= PSR_UAO_BIT;
 		p->thread.cpu_context.x19 = stack_start;
 		p->thread.cpu_context.x20 = stk_sz;
 	}
@@ -379,6 +384,17 @@ static void tls_thread_switch(struct task_struct *next)
 	: : "r" (tpidr), "r" (tpidrro));
 }
 
+/* Restore the UAO state depending on next's addr_limit */
+static void uao_thread_switch(struct task_struct *next)
+{
+	if (IS_ENABLED(CONFIG_ARM64_UAO)) {
+		if (task_thread_info(next)->addr_limit == KERNEL_DS)
+			asm(ALTERNATIVE("nop", SET_PSTATE_UAO(1), ARM64_HAS_UAO));
+		else
+			asm(ALTERNATIVE("nop", SET_PSTATE_UAO(0), ARM64_HAS_UAO));
+	}
+}
+
 /*
  * Thread switching.
  */
@@ -391,6 +407,7 @@ struct task_struct *__switch_to(struct task_struct *prev,
 	tls_thread_switch(next);
 	hw_breakpoint_thread_switch(next);
 	contextidr_thread_switch(next);
+	uao_thread_switch(next);
 
 	/*
 	 * Complete any pending TLB or cache maintenance on this CPU in case
