@@ -94,6 +94,11 @@ void __init early_print(const char *str, ...)
 	printk("%s", buf);
 }
 
+/*
+ * The recorded values of x0 .. x3 upon kernel entry.
+ */
+u64 __cacheline_aligned boot_args[4];
+
 void __init smp_setup_processor_id(void)
 {
 	/*
@@ -110,7 +115,6 @@ bool arch_match_cpu_phys_id(int cpu, u64 phys_id)
 }
 
 struct mpidr_hash mpidr_hash;
-#ifdef CONFIG_SMP
 /**
  * smp_build_mpidr_hash - Pre-compute shifts required at each affinity
  *			  level in order to build a linear index from an
@@ -176,7 +180,6 @@ static void __init smp_build_mpidr_hash(void)
 		pr_warn("Large number of MPIDR hash buckets detected\n");
 	__flush_dcache_area(&mpidr_hash, sizeof(struct mpidr_hash));
 }
-#endif
 
 static void __init setup_machine_fdt(phys_addr_t dt_phys)
 {
@@ -274,7 +277,6 @@ void __init setup_arch(char **cmdline_p)
 	paging_init();
 	request_standard_resources();
 
-	efi_virtmap_init();
 	early_ioremap_reset();
 
 	unflatten_device_tree();
@@ -283,9 +285,16 @@ void __init setup_arch(char **cmdline_p)
 
 	cpu_logical_map(0) = read_cpuid_mpidr() & MPIDR_HWID_BITMASK;
 	cpu_read_bootcpu_ops();
-#ifdef CONFIG_SMP
 	smp_init_cpus();
 	smp_build_mpidr_hash();
+
+#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+	/*
+	 * Make sure init_thread_info.ttbr0 always generates translation
+	 * faults in case uaccess_enable() is inadvertently called by the init
+	 * thread.
+	 */
+	init_thread_info.ttbr0 = virt_to_phys(empty_zero_page);
 #endif
 
 #ifdef CONFIG_VT
@@ -295,6 +304,12 @@ void __init setup_arch(char **cmdline_p)
 	conswitchp = &dummy_con;
 #endif
 #endif
+	if (boot_args[1] || boot_args[2] || boot_args[3]) {
+		pr_err("WARNING: x1-x3 nonzero in violation of boot protocol:\n"
+			"\tx1: %016llx\n\tx2: %016llx\n\tx3: %016llx\n"
+			"This indicates a broken bootloader or old kernel\n",
+			boot_args[1], boot_args[2], boot_args[3]);
+	}
 }
 
 static int __init arm64_device_init(void)

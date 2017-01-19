@@ -39,6 +39,9 @@ int main(void)
   DEFINE(TI_TASK,		offsetof(struct thread_info, task));
   DEFINE(TI_EXEC_DOMAIN,	offsetof(struct thread_info, exec_domain));
   DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
+#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+  DEFINE(TSK_TI_TTBR0,		offsetof(struct thread_info, ttbr0));
+#endif
   BLANK();
   DEFINE(THREAD_CPU_CONTEXT,	offsetof(struct task_struct, thread.cpu_context));
   BLANK();
@@ -59,9 +62,10 @@ int main(void)
   DEFINE(S_PC,			offsetof(struct pt_regs, pc));
   DEFINE(S_ORIG_X0,		offsetof(struct pt_regs, orig_x0));
   DEFINE(S_SYSCALLNO,		offsetof(struct pt_regs, syscallno));
+  DEFINE(S_ORIG_ADDR_LIMIT,	offsetof(struct pt_regs, orig_addr_limit));
   DEFINE(S_FRAME_SIZE,		sizeof(struct pt_regs));
   BLANK();
-  DEFINE(MM_CONTEXT_ID,		offsetof(struct mm_struct, context.id));
+  DEFINE(MM_CONTEXT_ID,		offsetof(struct mm_struct, context.id.counter));
   BLANK();
   DEFINE(VMA_VM_MM,		offsetof(struct vm_area_struct, vm_mm));
   DEFINE(VMA_VM_FLAGS,		offsetof(struct vm_area_struct, vm_flags));
