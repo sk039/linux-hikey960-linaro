@@ -23,6 +23,7 @@
 #include <linux/spinlock.h>
 #include <linux/topology.h>
 #include <linux/notifier.h>
+#include <linux/property.h>
 
 #include <asm/byteorder.h>
 #include <asm/errno.h>
@@ -268,6 +269,10 @@ int of_property_read_u32_planar_array(const struct device_node *np,
 
 extern int of_property_read_u64(const struct device_node *np,
 				const char *propname, u64 *out_value);
+extern int of_property_read_u64_array(const struct device_node *np,
+				      const char *propname,
+				      u64 *out_values,
+				      size_t sz);
 
 extern int of_property_read_string(struct device_node *np,
 				   const char *propname,
@@ -482,6 +487,13 @@ static inline int of_property_read_u32_array(const struct device_node *np,
 	return -ENOSYS;
 }
 
+static inline int of_property_read_u64_array(const struct device_node *np,
+					     const char *propname,
+					     u64 *out_values, size_t sz)
+{
+	return -ENOSYS;
+}
+
 static inline int of_property_read_string(struct device_node *np,
 					  const char *propname,
 					  const char **out_string)
@@ -586,7 +598,10 @@ static inline const char *of_prop_next_string(struct property *prop,
 #if defined(CONFIG_OF) && defined(CONFIG_NUMA)
 extern int of_node_to_nid(struct device_node *np);
 #else
-static inline int of_node_to_nid(struct device_node *device) { return 0; }
+static inline int of_node_to_nid(struct device_node *device)
+{
+	return NUMA_NO_NODE;
+}
 #endif
 
 static inline struct device_node *of_find_matching_node(
