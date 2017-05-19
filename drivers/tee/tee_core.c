@@ -635,6 +635,77 @@ out:
 	return rc;
 }
 
+static int tee_ioctl_agent_register(struct tee_context *ctx,
+				    unsigned int __user *ptr)
+{
+	int rc;
+	unsigned int agent_id;
+
+	if (!ctx->teedev->desc->ops->agent_register)
+		return -EINVAL;
+
+	if (get_user(agent_id, ptr))
+		return -EFAULT;
+
+	rc = ctx->teedev->desc->ops->agent_register(ctx, agent_id);
+
+	return rc;
+}
+
+static int tee_ioctl_agent_unregister(struct tee_context *ctx,
+				      unsigned int __user *ptr)
+{
+	int rc;
+	unsigned int agent_id;
+
+	if (!ctx->teedev->desc->ops->agent_unregister)
+		return -EINVAL;
+
+	if (get_user(agent_id, ptr))
+		return -EFAULT;
+
+	rc = ctx->teedev->desc->ops->agent_unregister(ctx, agent_id);
+
+	return rc;
+}
+
+static int tee_ioctl_agent_recv(struct tee_context *ctx,
+				struct tee_ioctl_agent_arg __user *arg)
+{
+	struct tee_ioctl_agent_arg buf;
+	int rc;
+
+	if (!ctx->teedev->desc->ops->agent_recv)
+		return -EINVAL;
+
+	if (copy_from_user(&buf, arg, sizeof(*arg)))
+	    return -EFAULT;
+
+	rc = ctx->teedev->desc->ops->agent_recv(ctx, buf.agent_id, &buf.buf);
+
+	if (copy_to_user(arg, &buf, sizeof(*arg)))
+	    return -EFAULT;
+
+	return rc;
+}
+
+static int tee_ioctl_agent_send(struct tee_context *ctx,
+				struct tee_ioctl_agent_arg __user *arg)
+{
+	struct tee_ioctl_agent_arg buf;
+	int rc;
+
+	if (!ctx->teedev->desc->ops->agent_recv)
+		return -EINVAL;
+
+	if (copy_from_user(&buf, arg, sizeof(*arg)))
+		return -EFAULT;
+
+	rc = ctx->teedev->desc->ops->agent_send(ctx, buf.agent_id, &buf.buf);
+
+	return rc;
+}
+
 static long tee_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct tee_context *ctx = filp->private_data;
@@ -659,6 +730,14 @@ static long tee_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return tee_ioctl_supp_recv(ctx, uarg);
 	case TEE_IOC_SUPPL_SEND:
 		return tee_ioctl_supp_send(ctx, uarg);
+	case TEE_IOC_AGENT_REGISTER:
+		return tee_ioctl_agent_register(ctx, uarg);
+	case TEE_IOC_AGENT_UNREGISTER:
+		return tee_ioctl_agent_unregister(ctx, uarg);
+	case TEE_IOC_AGENT_RECV:
+		return tee_ioctl_agent_recv(ctx, uarg);
+	case TEE_IOC_AGENT_SEND:
+		return tee_ioctl_agent_send(ctx, uarg);
 	default:
 		return -EINVAL;
 	}

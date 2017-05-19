@@ -107,6 +107,7 @@ struct optee_session {
 struct optee_context_data {
 	/* Serializes access to this struct */
 	struct mutex mutex;
+	struct list_head agent_list;
 	struct list_head sess_list;
 };
 
@@ -196,4 +197,17 @@ static inline void reg_pair_from_64(u32 *reg0, u32 *reg1, u64 val)
 	*reg1 = val;
 }
 
+int optee_tee_agent_cmd(unsigned int, void *, unsigned int);
+
+int optee_agent_register(struct tee_context *ctx, u32 agent_id);
+
+int optee_agent_unregister(struct tee_context *ctx, u32 agent_id);
+
+int optee_agent_recv(struct tee_context *ctx, u32 agent_id,
+		     struct tee_ioctl_buf_data *ubuf);
+
+int optee_agent_send(struct tee_context *ctx, u32 agent_id,
+		     struct tee_ioctl_buf_data *ubuf);
+
+void optee_agent_release(struct tee_context *ctx);
 #endif /*OPTEE_PRIVATE_H*/
