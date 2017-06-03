@@ -62,7 +62,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster0_opp>;
 			sched-energy-costs = <&CPU_COST_A53 &CLUSTER_COST_A53>;
 			cooling-min-level = <4>;
@@ -78,7 +77,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster0_opp>;
 			sched-energy-costs = <&CPU_COST_A53 &CLUSTER_COST_A53>;
 		};
@@ -90,7 +88,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster0_opp>;
 			sched-energy-costs = <&CPU_COST_A53 &CLUSTER_COST_A53>;
 		};
@@ -102,7 +99,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_0>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER0>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster0_opp>;
 			sched-energy-costs = <&CPU_COST_A53 &CLUSTER_COST_A53>;
 		};
@@ -114,7 +110,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
 			cooling-min-level = <4>;
@@ -130,7 +125,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
 		};
@@ -142,7 +136,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
 		};
@@ -154,7 +147,6 @@
 			enable-method = "psci";
 			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
-			clock-names = "cpu";
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
 		};
@@ -393,7 +385,7 @@
 
 		stub_clock: stub_clock {
 			compatible = "hisilicon,hi3660-stub-clk";
-			reg = <0x0 0xe896b000 0x0 0x1000>;
+			reg = <0x0 0xe896b500 0x0 0x0100>;
 			#clock-cells = <1>;
 			mbox-names = "mbox-tx";
 			mboxes = <&mailbox 13 3 0>;
