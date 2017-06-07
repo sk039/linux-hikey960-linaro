@@ -1350,8 +1350,7 @@
 
 		tsensor: tsensor {
 			compatible = "hisilicon,thermal-hi3660";
-			mbox-names = "mbox-tx";
-			mboxes = <&mailbox 28 3 0>;
+			reg = <0x0 0xfff30000 0x0 0x1000>;
 			#thermal-sensor-cells = <1>;
 			status = "ok";
 		};
@@ -1364,7 +1363,7 @@
 				sustainable-power = <4500>;
 
 				/* sensor ID */
-				thermal-sensors = <&tsensor 0>;
+				thermal-sensors = <&tsensor 4>;
 
 				trips {
 					threshold: trip-point@0 {
