@@ -98,6 +98,16 @@ config ARM_TEGRA_DEVFREQ
          It reads ACTMON counters of memory controllers and adjusts the
          operating frequencies and voltages with OPP support.
 
+config HISI_DDR_DEVFREQ
+       tristate "HISI DDR DEVFREQ Driver"
+       depends on ARCH_HISI
+       select DEVFREQ_GOV_SIMPLE_ONDEMAND
+       select PM_OPP
+       help
+         This adds the DEVFREQ driver for the Hisi family of SoCs.
+         It adjusts ddr frequency according to pm qos memory bandwidth
+         request.
+
 source "drivers/devfreq/event/Kconfig"
 
 endif # PM_DEVFREQ
