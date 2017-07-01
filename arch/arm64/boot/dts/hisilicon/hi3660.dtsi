@@ -1453,10 +1453,10 @@
 		num-lanes = <1>;
 		#interrupt-cells = <1>;
 		interrupt-map-mask = <0 0 0 7>;
-		interrupt-map = <0 0 0 1 &gic 0 0 0 282 4>,
-				<0 0 0 2 &gic 0 0 0  283 4>,
-				<0 0 0 3 &gic 0 0 0  284 4>,
-				<0 0 0 4 &gic 0 0 0  285 4>;
+		interrupt-map = <0 0 0 1 &gic 0 282 4>,
+				<0 0 0 2 &gic 0  283 4>,
+				<0 0 0 3 &gic 0  284 4>,
+				<0 0 0 4 &gic 0  285 4>;
 		clocks = <&crg_ctrl HI3660_PCIEPHY_REF>, <&crg_ctrl HI3660_CLK_GATE_PCIEAUX>,
 			 <&crg_ctrl HI3660_PCLK_GATE_PCIE_PHY>, <&crg_ctrl HI3660_PCLK_GATE_PCIE_SYS>,
 			 <&crg_ctrl HI3660_ACLK_GATE_PCIE>;
