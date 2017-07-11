@@ -232,7 +232,8 @@
 	kim {
 		compatible = "kim";
 		pinctrl-names = "default";
-		pinctrl-0 = <&uart4_pmx_func &i2s0_pmx_func &uart4_cfg_func &i2s0_cfg_func>;
+		pinctrl-0 = <&uart4_pmx_func &i2s2_pmx_func
+			     &uart4_cfg_func &i2s2_cfg_func>;
 		/*
 		 * FIXME: The following is complete CRAP since
 		 * the vendor driver doesn't follow the gpio
