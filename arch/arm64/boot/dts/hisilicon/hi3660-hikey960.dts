@@ -60,8 +60,9 @@
 			no-map;
 		};
 
-		ramoops_ram:pstore-mem{
-			reg = <0x0 0x20A00000 0x0 0x100000>;
+		pstore: pstore@20A00000 {
+			no-map;
+			reg = <0x0 0x20A00000 0x0 0x00100000>;  /* pstore/ramoops buffer */
 		};
 
 		lpmx-core {
@@ -73,6 +74,14 @@
 			reg = <0x0 0x89C80000 0x0 0x40000>;
 			no-map;
 		};
+	};
+
+	ramoops {
+		compatible = "ramoops";
+		memory-region = <&pstore>;
+		record-size	= <0x0 0x00020000>;
+		console-size	= <0x0 0x00020000>;
+		ftrace-size	= <0x0 0x00020000>;
 	};
 
 	soc {
