@@ -555,7 +555,7 @@ static int get_node_path(struct inode *inode, long block,
 		level = 3;
 		goto got;
 	} else {
-		BUG();
+		return -E2BIG;
 	}
 got:
 	return level;
@@ -579,6 +579,8 @@ int get_dnode_of_data(struct dnode_of_data *dn, pgoff_t index, int mode)
 	int err = 0;
 
 	level = get_node_path(dn->inode, index, offset, noffset);
+	if (level < 0)
+		return level;
 
 	nids[0] = dn->inode->i_ino;
 	npage[0] = dn->inode_page;
@@ -878,6 +880,8 @@ int truncate_inode_blocks(struct inode *inode, pgoff_t from)
 	trace_f2fs_truncate_inode_blocks_enter(inode, from);
 
 	level = get_node_path(inode, from, offset, noffset);
+	if (level < 0)
+		return level;
 
 	page = get_node_page(sbi, inode->i_ino);
 	if (IS_ERR(page)) {
@@ -1183,9 +1187,9 @@ page_hit:
 			nid, nid_of_node(page), ino_of_node(page),
 			ofs_of_node(page), cpver_of_node(page),
 			next_blkaddr_of_node(page));
-		ClearPageUptodate(page);
 		err = -EINVAL;
 out_err:
+		ClearPageUptodate(page);
 		f2fs_put_page(page, 1);
 		return ERR_PTR(err);
 	}
@@ -2292,8 +2296,6 @@ retry:
 			F2FS_FITS_IN_INODE(src, le16_to_cpu(src->i_extra_isize),
 								i_projid))
 			dst->i_projid = src->i_projid;
-
-		f2fs_inode_chksum_set(sbi, ipage);
 	}
 
 	new_ni = old_ni;

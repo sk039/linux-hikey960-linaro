@@ -153,7 +153,8 @@ bool f2fs_inode_chksum_verify(struct f2fs_sb_info *sbi, struct page *page)
 	struct f2fs_inode *ri;
 	__u32 provided, calculated;
 
-	if (!f2fs_enable_inode_chksum(sbi, page))
+	if (!f2fs_enable_inode_chksum(sbi, page) ||
+			PageDirty(page) || PageWriteback(page))
 		return true;
 
 	ri = &F2FS_NODE(page)->i;
@@ -517,6 +518,9 @@ no_delete:
 	stat_dec_inline_xattr(inode);
 	stat_dec_inline_dir(inode);
 	stat_dec_inline_inode(inode);
+
+	if (!is_set_ckpt_flags(sbi, CP_ERROR_FLAG))
+		f2fs_bug_on(sbi, is_inode_flag_set(inode, FI_DIRTY_INODE));
 
 	/* ino == 0, if f2fs_new_inode() was failed t*/
 	if (inode->i_ino)
