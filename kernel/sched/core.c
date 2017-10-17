@@ -1331,7 +1331,9 @@ static void __migrate_swap_task(struct task_struct *p, int cpu)
 		dst_rq = cpu_rq(cpu);
 
 		deactivate_task(src_rq, p, 0);
+		p->on_rq = TASK_ON_RQ_MIGRATING;
 		set_task_cpu(p, cpu);
+		p->on_rq = TASK_ON_RQ_QUEUED;
 		activate_task(dst_rq, p, 0);
 		check_preempt_curr(dst_rq, p, 0);
 	} else {
@@ -7641,17 +7643,16 @@ static int cpuset_cpu_active(struct notifier_block *nfb, unsigned long action,
 		 * operation in the resume sequence, just build a single sched
 		 * domain, ignoring cpusets.
 		 */
-		num_cpus_frozen--;
-		if (likely(num_cpus_frozen)) {
-			partition_sched_domains(1, NULL, NULL);
+		partition_sched_domains(1, NULL, NULL);
+		if (--num_cpus_frozen)
 			break;
-		}
 
 		/*
 		 * This is the last CPU online operation. So fall through and
 		 * restore the original sched domains by considering the
 		 * cpuset configurations.
 		 */
+		cpuset_force_rebuild();
 
 	case CPU_ONLINE:
 		cpuset_update_active_cpus(true);
