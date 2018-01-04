@@ -113,7 +113,7 @@
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			next-level-cache = <&A73_L2>;
-			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
@@ -129,7 +129,7 @@
 			reg = <0x0 0x101>;
 			enable-method = "psci";
 			next-level-cache = <&A73_L2>;
-			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
@@ -141,7 +141,7 @@
 			reg = <0x0 0x102>;
 			enable-method = "psci";
 			next-level-cache = <&A73_L2>;
-			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
@@ -153,7 +153,7 @@
 			reg = <0x0 0x103>;
 			enable-method = "psci";
 			next-level-cache = <&A73_L2>;
-			cpu-idle-states = <&CPU_NAP_0 &CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
+			cpu-idle-states = <&CPU_SLEEP_0 &CLUSTER_SLEEP_1>;
 			clocks = <&stub_clock HI3660_CLK_STUB_CLUSTER1>;
 			operating-points-v2 = <&cluster1_opp>;
 			sched-energy-costs = <&CPU_COST_A72 &CLUSTER_COST_A72>;
@@ -161,15 +161,6 @@
 
 		idle-states {
 			entry-method = "psci";
-
-			CPU_NAP_0: cpu-nap-0 {
-				compatible = "arm,idle-state";
-				arm,psci-suspend-param = <0x0000000>;
-				entry-latency-us = <7>;
-				exit-latency-us = <2>;
-				min-residency-us = <15>;
-				local-timer-stop;
-			};
 
 			CPU_SLEEP_0: cpu-sleep-0 {
 				compatible = "arm,idle-state";
