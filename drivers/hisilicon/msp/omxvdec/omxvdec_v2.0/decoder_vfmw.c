@@ -17,6 +17,7 @@
 #include "hi_drv_stat.h"
 #include "decoder.h"
 #include "vfmw_ext.h"
+#include "processor.h"
 
 
 /*================ EXTERN VALUE ================*/
@@ -206,6 +207,7 @@ HI_S32 decoder_global_release_frame(HI_DRV_VIDEO_FRAME_S* pstFrame)
 {
     HI_S32 s32Ret = HI_FAILURE;
     HI_U32 u32Index = 0;
+    OMXVDEC_CHAN_CTX *pchan = HI_NULL;
     OMXVDEC_FRM_INFO_S* pSpecialFrmInfo;
     D_OMXVDEC_CHECK_PTR_RET(pstFrame);
 
@@ -216,8 +218,19 @@ HI_S32 decoder_global_release_frame(HI_DRV_VIDEO_FRAME_S* pstFrame)
 	/* this frame isn't occupied frame */
 	OmxPrint(OMX_FATAL, "%s frame phy(0x%x) is invalid! remain num:%d\n", __func__, \
 		 pstFrame->stBufAddr[0].u32PhyAddr_Y, g_OmxVdec->stRemainFrmList.s32Num);
+    pchan = channel_find_inst_by_decoder_id(g_OmxVdec, 0);
 
-	return HI_FAILURE;
+    s32Ret = processor_release_image(pchan, pstFrame);
+
+    if (s32Ret != HI_SUCCESS)
+    {
+        OmxPrint(OMX_ERR, "%s release frame (0x%x) failed!\n", __func__, pstFrame->stBufAddr[0].u32PhyAddr_Y);
+        return HI_FAILURE;
+    }
+
+    OmxPrint(OMX_FATAL, "decoder_global_release_frame success!\n");
+
+    return HI_SUCCESS;
     }
 
     if (u32Index >= OMXVDEC_MAX_REMAIN_FRM_NUM)
