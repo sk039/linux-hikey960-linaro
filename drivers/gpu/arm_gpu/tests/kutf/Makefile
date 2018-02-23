@@ -1,5 +1,5 @@
 #
-# (C) COPYRIGHT 2013-2014, 2016 ARM Limited. All rights reserved.
+# (C) COPYRIGHT 2014-2017 ARM Limited. All rights reserved.
 #
 # This program is free software and is provided to you under the terms of the
 # GNU General Public License version 2 as published by the Free Software
@@ -13,10 +13,17 @@
 #
 
 
-obj-y += mali_kbase_config_juno_soc.o
+# linux build system bootstrap for out-of-tree module
 
-ifeq (($CONFIG_MALI_MIDGARD),y)
-obj-m += juno_mali_opp.o
-else ifeq ($(CONFIG_MALI_MIDGARD),m)
-SRC += platform/juno_soc/mali_kbase_config_juno_soc.c
+# default to building for the host
+ARCH ?= $(shell uname -m)
+
+ifeq ($(KDIR),)
+$(error Must specify KDIR to point to the kernel to target))
 endif
+
+all:
+	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) $(SCONS_CONFIGS) EXTRA_CFLAGS=-I$(CURDIR)/../include modules
+
+clean:
+	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) clean
