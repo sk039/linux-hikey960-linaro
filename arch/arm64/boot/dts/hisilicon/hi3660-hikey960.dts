@@ -222,6 +222,15 @@
 				regulator-enable-ramp-delay = <120>;
 			};
 
+			ldo11: LDO11 { /* Low Speed Connector */
+				regulator-compatible = "hi6421v530_ldo11";
+				regulator-name = "VOUT11_1V8_2V95";
+				regulator-min-microvolt = <1750000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+				regulator-enable-ramp-delay = <240>;
+			};
+
 			ldo13: LDO13 {
 				regulator-compatible = "hi6421v530_ldo13";
 				regulator-name = "LDO13";
