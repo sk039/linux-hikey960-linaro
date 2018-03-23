@@ -174,5 +174,7 @@ obj-$(CONFIG_STM)		+= hwtracing/stm/
 obj-$(CONFIG_ANDROID)		+= android/
 obj-$(CONFIG_NVMEM)		+= nvmem/
 obj-$(CONFIG_FPGA)		+= fpga/
+obj-$(CONFIG_HI_VCODEC_VENC) += vcodec/venc/
+obj-$(CONFIG_HI_VCODEC_VDEC) += vcodec/vdec/
 obj-$(CONFIG_TEE)		+= tee/
 obj-$(CONFIG_HISILICON_PLATFORM)+= hisi/
