@@ -34,7 +34,7 @@
 	 int D32;
 	unsigned int datTmp;
 
-	dprint(KERN_INFO, "\n\n***********************H264HAL_StartDec ***********************\n");
+//	dprint(KERN_INFO, "\n\n***********************H264HAL_StartDec ***********************\n");
 	D32 = 0;
 	((BASIC_CFG0 *)(&D32))->mbamt_to_dec         = ((BASIC_CFG0 *)(&pVdhRegCfg->VdhBasicCfg0))->mbamt_to_dec;
 	((BASIC_CFG0 *)(&D32))->load_qmatrix_flag    = 1;
