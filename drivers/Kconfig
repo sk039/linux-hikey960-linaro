@@ -88,6 +88,10 @@ source "drivers/regulator/Kconfig"
 
 source "drivers/media/Kconfig"
 
+source "drivers/vcodec/venc/Kconfig"
+
+source "drivers/vcodec/vdec/Kconfig"
+
 source "drivers/video/Kconfig"
 
 source "sound/Kconfig"
