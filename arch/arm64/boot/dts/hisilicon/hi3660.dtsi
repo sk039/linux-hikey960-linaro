@@ -1276,6 +1276,29 @@
 			status = "ok";
 		};
 
+		/* vcodec */
+		vdec {
+			compatible = "hisi,kirin960-vdec";
+			reg = <0x0 0xe8800000 0x0 0x20000>;
+			interrupts = <0 290 4>, <0 291 4>, <0 292 4>, <0 293 4>;
+			clocks = <&crg_ctrl HI3660_CLK_GATE_VDEC>;
+			clock-names = "clk_gate_vdec";
+			dec_clk_rate = <400000000>, <200000000>;
+			vdec_fpga = <0x1>;
+			status = "ok";
+		};
+
+		venc {
+			compatible = "hisi,kirin960-venc";
+			reg = <0x0 0xe8900000 0x0 0x20000>;
+			interrupts = <0 298 4>, <0 299 4>;
+			clocks = <&crg_ctrl HI3660_CLK_GATE_VENC>, <&crg_ctrl HI3660_VENC_VOLT_HOLD>;
+			clock-names = "clk_gate_venc", "venc_volt_hold";
+			enc_clk_rate = <645000000>, <534000000>;
+			venc_fpga = <0x1>;
+			status = "ok";
+		};
+
 		/* SD */
 		dwmmc1: dwmmc1@FF37F000 {
 			#address-cells = <1>;
