@@ -9,9 +9,9 @@
 
 #include "simple_core.h"
 #include "vfmw_linux_kernel_proc.h"
-
+#ifdef VDH_DISTRIBUTOR_ENABLE
 #include "vdh_distributor.h"
-
+#endif
 /*=============== LOCAL DEFINITION =============*/
 typedef enum
 {

@@ -18,7 +18,7 @@
 
 ******************************************************************************/
 
-#include "public.h"
+#include "vfmw_log.h"
 #include "vfmw_linux_kernel_proc.h"
 
 #include "vfmw_osal_ext.h"
@@ -126,14 +126,14 @@ typedef struct hiVFMW_CALLBACK_S
 
 /* Global pointer */
 MEMORY_NEEDED_SECVFMW_S *g_pSecVfmwMem = NULL;
-CALLBACK_ARRAY_NS       *g_pCallbackBuf = NULL;
-RAW_ARRAY_NS            *g_pStreamBuf = NULL;
-IMAGE_QUEUE_NS          *g_pImageQue    = NULL;
+static CALLBACK_ARRAY_NS       *g_pCallbackBuf = NULL;
+static RAW_ARRAY_NS            *g_pStreamBuf = NULL;
+static IMAGE_QUEUE_NS          *g_pImageQue    = NULL;
 #if (1 == DEBUG_SAVE_SUPPORT)
-UINT8                   *g_pSaveStreamBuf = NULL;
+static UINT8                   *g_pSaveStreamBuf = NULL;
 #endif
 #ifndef  HI_ADVCA_FUNCTION_RELEASE
-UINT8                   *g_pProcBuf     = NULL;
+static UINT8                   *g_pProcBuf     = NULL;
 #endif
 
 #ifdef VFMW_STB_PRODUCT
