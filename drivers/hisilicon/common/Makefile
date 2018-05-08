@@ -50,7 +50,9 @@ ifdef CONFIG_COMPAT
 $(MOD_NAME_MMZ)-y += mmz/drv_mmz_compat.o
 endif
 
-$(MOD_NAME_MMZ)-y += mmz/drv_mmz_userdev.o mmz/drv_media_mem.o
+$(MOD_NAME_MMZ)-y += mmz/drv_mmz_userdev.o mmz/drv_media_mem.o \
+		    mmz/drv_tee_smmu_agent.o \
+		    mmz/drv_tzsmmu.o
 
 ###############################################################################
 obj-y += $(MOD_NAME_MEDIA).o $(MOD_NAME_MMZ).o $(MOD_NAME_CMN).o
