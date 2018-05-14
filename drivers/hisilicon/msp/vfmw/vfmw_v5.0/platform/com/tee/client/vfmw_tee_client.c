@@ -163,7 +163,7 @@ static TEEC_Session      g_TeeSession;
 
 /*静态全局变量*/
 static MEM_DESC_S        g_SecVfmwMem;
-static SINT32            g_SecPrintEnable       = 0x0;
+static SINT32            g_SecPrintEnable       = 0x3;
 static SINT32            g_SecProcSelect        = 0x0;
 static SINT32            g_SecureInstNum        = 0;
 static SINT32            g_TrustDecoderInitCnt  = 0;
@@ -1281,18 +1281,18 @@ SINT32 TVP_VDEC_LocalControl(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs, UINT
 
 VOID TVP_VDEC_PrepareRemoteParam(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs)
 {
-    SINT64 *p64Array = NULL;
-    SINT8 *pArgParam = NULL;
+    //SINT64 *p64Array = NULL;
+    //SINT8 *pArgParam = NULL;
 
     if (eCmdID == VDEC_CID_CREATE_CHAN
      || eCmdID == VDEC_CID_GET_CHAN_MEMSIZE)
     {
-        p64Array = (SINT64 *)pArgs;
-        pArgParam = UINT64_PTR(p64Array[1]);
+        //p64Array = (SINT64 *)pArgs;
+        //pArgParam = UINT64_PTR(p64Array[1]);
     #ifdef CHIP_98MV200_ULTRAVMX
-        TVP_VDEC_ConvertOptionToSecure(ChanID, (VDEC_CHAN_OPTION_S *)pArgParam, &g_pSecVfmwMem->ChanOption);
+        //TVP_VDEC_ConvertOptionToSecure(ChanID, (VDEC_CHAN_OPTION_S *)pArgParam, &g_pSecVfmwMem->ChanOption);
     #else
-        OSAL_FP_memcpy(&g_pSecVfmwMem->ChanOption, pArgParam, sizeof(VDEC_CHAN_OPTION_S));
+        OSAL_FP_memcpy(&g_pSecVfmwMem->ChanOption, &((VDEC_CHAN_CREATE_OPTION_S *)pArgs)->Option, sizeof(VDEC_CHAN_OPTION_S));
     #endif
     }
 
@@ -1301,9 +1301,10 @@ VOID TVP_VDEC_PrepareRemoteParam(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs)
 
 VOID TVP_VDEC_ProcessRemoteResult(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs, SINT32 RemoteResult)
 {
-    SINT64 *p64Array = (SINT64 *)pArgs;
-    SINT8 *pArgParam = NULL;
+    //SINT64 *p64Array = (SINT64 *)pArgs;
+    //SINT8 *pArgParam = NULL;
     VDEC_CHAN_RESET_OPTION_S *pResetOption = NULL;
+    VDEC_CHAN_OPTION_S *pOption = NULL;
 
     switch (eCmdID)
     {
@@ -1319,7 +1320,7 @@ VOID TVP_VDEC_ProcessRemoteResult(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs,
                 Sema_Init_with_Option(&g_ChanContext[RetChanID].ChanSema);
                 g_SecureInstNum++;
             }
-
+            #if 0
             pArgParam = UINT64_PTR(p64Array[1]);
             if (pArgParam != NULL)
             {
@@ -1329,16 +1330,38 @@ VOID TVP_VDEC_ProcessRemoteResult(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs,
                 OSAL_FP_memcpy(pArgParam, &g_pSecVfmwMem->ChanOption, sizeof(VDEC_CHAN_OPTION_S));
             #endif
             }
+            #endif
+            pOption = &(((VDEC_CHAN_CREATE_OPTION_S *)pArgs)->Option);
+            if (pOption != NULL)
+            {
+            #ifdef CHIP_98MV200_ULTRAVMX
+                TVP_VDEC_ConvertOptionToNS(ChanID, &g_pSecVfmwMem->ChanOption, pOption);
+            #else
+                OSAL_FP_memcpy(pOption, &g_pSecVfmwMem->ChanOption, sizeof(VDEC_CHAN_OPTION_S));
+            #endif
+            }
             break;
 
         case VDEC_CID_GET_CHAN_MEMSIZE:
+            #if 0
             pArgParam = UINT64_PTR(p64Array[1]);
             if (pArgParam != NULL)
             {
             #ifdef CHIP_98MV200_ULTRAVMX
                 TVP_VDEC_ConvertOptionToNS(ChanID, &g_pSecVfmwMem->ChanOption, (VDEC_CHAN_OPTION_S *)pArgParam);
             #else
+                SecPrint(PRN_FATAL, "pArgParam = %p g_pSecVfmwMem->ChanOption = %p\n", pArgParam, &g_pSecVfmwMem->ChanOption);
                 OSAL_FP_memcpy(pArgParam, &g_pSecVfmwMem->ChanOption, sizeof(VDEC_CHAN_OPTION_S));
+            #endif
+            }
+            #endif
+            pOption = &(((VDEC_CHAN_CREATE_OPTION_S *)pArgs)->Option);
+            if (pOption != NULL)
+            {
+            #ifdef CHIP_98MV200_ULTRAVMX
+                TVP_VDEC_ConvertOptionToNS(ChanID, &g_pSecVfmwMem->ChanOption, pOption);
+            #else
+                OSAL_FP_memcpy(pOption, &g_pSecVfmwMem->ChanOption, sizeof(VDEC_CHAN_OPTION_S));
             #endif
             }
             break;
@@ -1504,6 +1527,8 @@ SINT32 TVP_VDEC_Control(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs, UINT32 Pa
 
     Down_Interruptible_with_Option(&g_stSem_s);
 
+    SecPrint(PRN_FATAL, "%s %d eCmdID = %d enter\n", __func__, __LINE__, eCmdID);
+
     if (HI_FALSE == g_bSecEnvSetUp)
     {
         SecPrint(PRN_FATAL, "%s: secure decoder not inited yet!\n", __func__);
@@ -1519,6 +1544,8 @@ SINT32 TVP_VDEC_Control(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs, UINT32 Pa
     {
         ret = TVP_VDEC_RemoteControl(ChanID, eCmdID, pArgs, ParamLength);
     }
+
+    SecPrint(PRN_FATAL, "%s %d eCmdID = %d exit\n", __func__, __LINE__, eCmdID);
 
     Up_Interruptible_with_Option(&g_stSem_s);
 
@@ -1953,7 +1980,6 @@ SINT32 TVP_VDEC_TrustDecoderInit(VDEC_OPERATION_S *pArgs)
         {
             SecPrint(PRN_ERROR, "Set CallBack Failed!\n");
         }
-
         Up_Interruptible_with_Option(&g_stSem_s);
         return ret;
     }
@@ -2078,7 +2104,7 @@ SINT32 TVP_VDEC_TrustDecoderInit(VDEC_OPERATION_S *pArgs)
     g_bSecEnvSetUp = HI_TRUE;
 
     Up_Interruptible_with_Option(&g_stSem_s);
-
+    SecPrint(PRN_ERROR, "%s exit\n", __func__);
     return VDEC_OK;
 InitWithfree_4:
     vfmw_Osal_Func_Ptr_S.pfun_Osal_free_irq(SECURE_NOTIFY_IRQ_NUM, "SecInvokeirq", pIrqHandle);
@@ -2103,6 +2129,7 @@ InitWithfree_0:
     TEEK_FinalizeContext(&g_TeeContext);
 
     Up_Interruptible_with_Option(&g_stSem_s);
+
     return VDEC_ERR;
 
 }
@@ -2113,6 +2140,8 @@ SINT32 TVP_VDEC_TrustDecoderExit(VOID)
     TEEC_Result result;
     TEEC_Operation operation;
     SINT32 ret;
+
+    SecPrint(PRN_ERROR, "%s Enter\n", __func__);
 
     Down_Interruptible_with_Option(&g_stSem_s);
 
@@ -2167,6 +2196,8 @@ SINT32 TVP_VDEC_TrustDecoderExit(VOID)
     g_bSecEnvSetUp = HI_FALSE;
 
     Up_Interruptible_with_Option(&g_stSem_s);
+
+    SecPrint(PRN_ERROR, "%s exit\n", __func__);
     return ret;
 }
 
