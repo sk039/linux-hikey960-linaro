@@ -687,6 +687,7 @@ static HI_S32 decoder_get_stream(HI_S32 chan_id, STREAM_DATA_S *stream_data)
 	stream_data->Length		  = pbuf->act_len;
 	stream_data->Pts		  = pbuf->time_stamp;
 	stream_data->RawExt.Flags	  = pbuf->flags;
+    stream_data->RawExt.Flags        |= VDEC_BUFFERFLAG_FROMOMX;
 	stream_data->RawExt.BufLen	  = pbuf->buf_len;
 	stream_data->RawExt.CfgWidth	  = pchan->out_width;
 	stream_data->RawExt.CfgHeight	  = pchan->out_height;

@@ -310,6 +310,7 @@ typedef enum
 #define VDEC_BUFFERFLAG_SYNCFRAME	  (0x00000020)
 #define VDEC_BUFFERFLAG_EXTRADATA	  (0x00000040)
 #define VDEC_BUFFERFLAG_CODECCONFIG	  (0x00000080)
+#define VDEC_BUFFERFLAG_FROMOMX       (0x10000000)
 
 /* channel capacity level */
 typedef enum hiCAP_LEVEL_E
