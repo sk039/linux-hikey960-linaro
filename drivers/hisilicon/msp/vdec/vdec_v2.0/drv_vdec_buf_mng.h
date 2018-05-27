@@ -23,6 +23,7 @@
 #include "hi_type.h"
 #include "hi_error_mpi.h"
 #include "hi_drv_video.h"
+#include "vfmw.h"
 #ifdef __cplusplus
 #if __cplusplus
 extern "C" {

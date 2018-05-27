@@ -14450,13 +14450,13 @@ static HI_S32 VDEC_Ioctl_GolbaRelease(struct file*  filp, unsigned int cmd, void
     if (s32Ret != HI_SUCCESS)
     {
 //TO DO
-#if 0
+//#if 0
 #ifdef ANDROID
 	s32Ret = decoder_global_release_frame(&((VDEC_CMD_GLOBAL_REL_FRM_S*)arg)->FrmInfo);
 
 	if (s32Ret != HI_SUCCESS)
 #endif
-#endif
+//#endif
 	{
 	    HI_ERR_VDEC("HI_DRV_VDEC_GlobalRelFrm err!:%d\n", s32Ret);
 	}
