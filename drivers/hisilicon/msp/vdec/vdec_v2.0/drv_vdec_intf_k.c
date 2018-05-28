@@ -117,7 +117,7 @@ extern "C" {
 #define HI_VDEC_RESOCHANGE_MASK (0x1)
 #define HI_VDEC_CLOSEDEI_MASK	(0x2) /* Close deinterlace */
 
-#define HI_VDEC_CC_FROM_IMAGE (1)
+#define HI_VDEC_CC_FROM_IMAGE (0)
 
 #define HI_VDEC_FRAME_SIZE_1080P    (3600 * 1024)
 #define HI_VDEC_FRAME_SIZE_2160P    (8100 * 1024)
