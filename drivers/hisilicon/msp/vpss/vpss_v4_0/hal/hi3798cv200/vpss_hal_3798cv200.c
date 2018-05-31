@@ -935,9 +935,13 @@ HI_S32 VPSS_HAL_SetPortCropCfg(VPSS_IP_E enIP,
 
     pstInCropRect = &(pstHalPort->stOutCropRect);
 
+#if 0
     //4pixel align
     pstInCropRect->s32Width = ((HI_U32)pstInCropRect->s32Width) & VPSS_WIDTH_ALIGN_4PIXELCLK;
 
+#else
+    pstInCropRect->s32Width = ((HI_U32)pstInCropRect->s32Width) & VPSS_WIDTH_ALIGN;
+#endif
     if (pstHalInfo->enNodeType == VPSS_HAL_NODE_2D_Field)
     {
 	u32CropX = pstInCropRect->s32X;
@@ -2138,6 +2142,7 @@ HI_S32 VPSS_HAL_SetFrameNode(VPSS_IP_E enIP, VPSS_HAL_INFO_S *pstHalInfo,
     if (0x0 != (pstHalInfo->stInInfo.u32Width & 0x3))
     {
         VPSS_REG_SetTNrEn(pu32AppVir, HI_FALSE);
+        VPSS_REG_SetSNrEn(pu32AppVir, HI_FALSE);
     }
 #if 1
     /*rwzb*/
@@ -2255,6 +2260,11 @@ HI_S32 VPSS_HAL_SetFrameNode(VPSS_IP_E enIP, VPSS_HAL_INFO_S *pstHalInfo,
 	VPSS_REG_SetBlkDetEn(pu32AppVir, HI_FALSE);
     }
 
+    if (0x0 != (pstHalInfo->stInInfo.u32Width & 0x3))
+    {
+        VPSS_REG_SetDbmEn(pu32AppVir, HI_FALSE);
+        VPSS_REG_SetBlkDetEn(pu32AppVir, HI_FALSE);
+    }
     VPSS_Tnr_ADDR = u32AppPhy + VPSS_REG_SIZE_CALC(VPSS_CTRL, VPSS_TNR_MODE) - sizeof(HI_U32);
     VPSS_Tnr_CLUT_ADDR = u32AppPhy + VPSS_REG_SIZE_CALC(VPSS_CTRL, VPSS_TNR_CLUT10) - sizeof(HI_U32);
     VPSS_REG_SetTnrAddr(pu32AppVir, VPSS_Tnr_ADDR, VPSS_Tnr_CLUT_ADDR);
