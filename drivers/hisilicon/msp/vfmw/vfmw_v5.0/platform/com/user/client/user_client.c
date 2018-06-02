@@ -158,6 +158,11 @@ static SINT32 VFMW_UC_ProcessCallBack(VOID)
     VDEC_ADAPTER_TYPE_E eAdapterType;
     UINT8		*pPara;
 
+    if (g_pCallbackBuf == NULL)
+    {
+        return;
+    }
+
     while (g_pCallbackBuf->Tail != g_pCallbackBuf->Head)
     {
 	if (g_pCallbackBuf->Message[g_pCallbackBuf->Tail].IsValid)
@@ -984,8 +989,8 @@ SINT32 VFMW_UC_Exit(VOID)
     }
 
     KernelMemFree(&g_UserVfmwMem);
-    g_UserDecoderInitCnt = 0;
-    g_bUserEnvSetUp = HI_FALSE;
+
+    VFMW_UC_ContextInit();
 
     Up_Interruptible_with_Option(&g_stSem_s);
 
