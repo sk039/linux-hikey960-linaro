@@ -136,9 +136,25 @@ HI_S32 VPSS_HAL_H265RefListDeInit(VPSS_HAL_RefList_S *pstRefList)
 {
     HI_S32 s32Idx;
     HI_U32 u32BaseAddr = 0;
+#ifdef HI_TEE_SUPPORT
+    HI_S32 s32Ret = HI_SUCCESS;
+#endif
 
     if (pstRefList->bRefListValid)
     {
+#ifdef HI_TEE_SUPPORT
+        if (0 != pstRefList->stRefListBuf_tee.u32Size)
+        {
+            u32BaseAddr = pstRefList->stRefListBuf_tee.u32StartSmmuAddr;
+            s32Ret = HI_DRV_SECSMMU_Release(&(pstRefList->stRefListBuf_tee));
+            if (s32Ret != HI_SUCCESS)
+            {
+                VPSS_FATAL("Free VPSS_H265RefBuf_TEE Failed\n");
+                return HI_FAILURE;
+            }
+            memset(&pstRefList->stRefListBuf_tee, 0, sizeof(pstRefList->stRefListBuf_tee));
+        }
+#endif
 	if (0 != pstRefList->stRefListBuf_mmu.u32Size)
 	{
 	    u32BaseAddr = pstRefList->stRefListBuf_mmu.u32StartSmmuAddr;
@@ -192,11 +208,19 @@ HI_S32 VPSS_HAL_H265RefListInit(VPSS_HAL_RefList_S *pstRefList, HI_S32 s32Width,
 
     if (bSecure)
     {
+#ifdef HI_TEE_SUPPORT
+        s32Ret = HI_DRV_SECSMMU_Alloc("VPSS_H265RefBuf_TEE",
+                                      s32Width * s32Height * 3 / 2 * DEF_VPSS_HAL_REF_LIST_NUM,
+                                      0,
+                                      &(pstRefList->stRefListBuf_tee));
+        u32StartAddr = pstRefList->stRefListBuf_tee.u32StartSmmuAddr;
+#else
 	s32Ret = HI_DRV_SMMU_Alloc( "VPSS_H265RefBuf_MMU",
 				    s32Width * s32Height * 3 / 2 * DEF_VPSS_HAL_REF_LIST_NUM,
 				    0,
 				    &(pstRefList->stRefListBuf_mmu));
 	u32StartAddr = pstRefList->stRefListBuf_mmu.u32StartSmmuAddr;
+#endif
     }
     else
     {
@@ -2452,8 +2476,12 @@ HI_S32 VPSS_HAL_AllocDetileBuffer(VPSS_IP_E enIP, HI_BOOL bSecure)
     {
 	if (pstHalCtx->stDeTileTEEBuf.u32Size == 0)
 	{
+#ifdef HI_TEE_SUPPORT
+            s32Ret = HI_DRV_SECSMMU_Alloc("VPSS_DETILE_BUF", 1920 * 1080 * 2, 0, &pstHalCtx->stDeTileTEEBuf);
+#else
 	    s32Ret = HI_DRV_SMMU_Alloc( "VPSS_DETILE_BUF",
 					1920 * 1080 * 2, 0, &pstHalCtx->stDeTileTEEBuf);
+#endif
 	    if (s32Ret != HI_SUCCESS)
 	    {
 		VPSS_FATAL("Alloc Detile buffer Failed\n");
@@ -2491,7 +2519,11 @@ HI_VOID VPSS_HAL_FreeDetileBuffer(VPSS_IP_E enIP)
 
     if (pstHalCtx->stDeTileTEEBuf.u32Size != 0)
     {
+#ifdef HI_TEE_SUPPORT
+        (HI_VOID)HI_DRV_SECSMMU_Release(&(pstHalCtx->stDeTileTEEBuf));
+#else
 	(HI_VOID)HI_DRV_SMMU_Release(&(pstHalCtx->stDeTileTEEBuf));
+#endif
 	memset(&(pstHalCtx->stDeTileTEEBuf), 0, sizeof(SMMU_BUFFER_S));
     }
 

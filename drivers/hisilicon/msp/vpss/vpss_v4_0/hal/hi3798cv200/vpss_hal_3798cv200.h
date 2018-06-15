@@ -181,6 +181,9 @@ typedef struct hiVPSS_HAL_PORT_INFO_S
 typedef struct hiVPSS_HAL_RefList
 {
     SMMU_BUFFER_S stRefListBuf_mmu;
+#ifdef HI_TEE_SUPPORT
+    SMMU_BUFFER_S stRefListBuf_tee;
+#endif
 
     HI_DRV_VID_FRAME_ADDR_S stRefListAddr[DEF_VPSS_HAL_REF_LIST_NUM];
     HI_BOOL		    abRefNodeValid[DEF_VPSS_HAL_REF_LIST_NUM];

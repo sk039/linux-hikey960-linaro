@@ -338,6 +338,9 @@ HI_S32 VPSS_WBC_Init(VPSS_WBC_S *pstWbc, VPSS_WBC_ATTR_S *pstAttr)
 
     if (pstAttr->bSecure)
     {
+#ifdef HI_TEE_SUPPORT
+        s32Ret = HI_DRV_SECSMMU_Alloc("VPSS_WbcBuf", u32TotalBuffSize, 0, &pstWbc->stTEEBuf);
+#else
 	if (VPSS_IS_TILE_FMT(pstAttr->ePixFormat))
 	{
 	    s32Ret = HI_DRV_SMMU_AllocAndMap("VPSS_WbcBuf", u32TotalBuffSize, 0, &(pstWbc->stTEEBuf));
@@ -346,6 +349,7 @@ HI_S32 VPSS_WBC_Init(VPSS_WBC_S *pstWbc, VPSS_WBC_ATTR_S *pstAttr)
 	{
 	    s32Ret = HI_DRV_SMMU_Alloc("VPSS_WbcBuf", u32TotalBuffSize, 0, &(pstWbc->stTEEBuf));
 	}
+#endif
 	if (HI_FAILURE == s32Ret)
 	{
 	    VPSS_FATAL("VPSS WBC Alloc memory failed.\n");
@@ -466,6 +470,9 @@ HI_S32 VPSS_WBC_DeInit(VPSS_WBC_S *pstWbc)
 
     if (0 != pstWbc->stTEEBuf.u32StartSmmuAddr)
     {
+#ifdef HI_TEE_SUPPORT
+        (HI_VOID)HI_DRV_SECSMMU_Release(&pstWbc->stTEEBuf);
+#else
 	if (HI_NULL != pstWbc->stTEEBuf.pu8StartVirAddr)
 	{
 	    HI_DRV_SMMU_UnmapAndRelease(&pstWbc->stTEEBuf);
@@ -474,6 +481,7 @@ HI_S32 VPSS_WBC_DeInit(VPSS_WBC_S *pstWbc)
 	{
 	    HI_DRV_SMMU_Release(&pstWbc->stTEEBuf);
 	}
+#endif
     }
 
     if (0 != pstWbc->stMMUBuf.u32StartSmmuAddr)

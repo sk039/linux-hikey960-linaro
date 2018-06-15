@@ -887,7 +887,6 @@ HI_S32 VPSS_IN_Refresh_V3(VPSS_IN_ENTITY_S *pstEntity)
 	stWbcAttr.u32FrameIndex = pstImage->u32FrameIndex;
 	stWbcAttr.u32Pts = pstImage->u32Pts;
 	stWbcAttr.bSecure = pstImage->bSecure;
-
 	stNrAttr.u32Height = pstImage->u32Height;
 	stNrAttr.u32Width = pstImage->u32Width;
 	stNrAttr.bSecure = pstImage->bSecure;
