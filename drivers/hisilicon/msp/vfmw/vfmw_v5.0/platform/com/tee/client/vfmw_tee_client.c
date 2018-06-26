@@ -185,7 +185,7 @@ static CHAN_CONTEXT_S    g_ChanContext[MAX_CHAN_NUM];
 #ifdef CHIP_98MV200_ULTRAVMX
 static VDEC_SECURE_ADAPTER_ATTR_S g_ChanAdapterAttr[MAX_CHAN_NUM];
 #endif
-extern SINT32 g_IRQ_FLAG;
+SINT32 g_IRQ_FLAG = 0x00000080;
 
 #if (1 == DEBUG_SAVE_SUPPORT)
 VOID TVP_VDEC_SaveStream(SINT32 ChanID, HI_BOOL bSaveEnable, UADDR PhyAddr, SINT32 Length)
