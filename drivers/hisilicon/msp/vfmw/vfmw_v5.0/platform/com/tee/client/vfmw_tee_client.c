@@ -1527,7 +1527,7 @@ SINT32 TVP_VDEC_Control(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs, UINT32 Pa
 
     Down_Interruptible_with_Option(&g_stSem_s);
 
-    SecPrint(PRN_FATAL, "%s %d eCmdID = %d enter\n", __func__, __LINE__, eCmdID);
+    //SecPrint(PRN_FATAL, "%s %d eCmdID = %d enter\n", __func__, __LINE__, eCmdID);
 
     if (HI_FALSE == g_bSecEnvSetUp)
     {
@@ -1545,7 +1545,7 @@ SINT32 TVP_VDEC_Control(SINT32 ChanID, VDEC_CID_E eCmdID, VOID *pArgs, UINT32 Pa
         ret = TVP_VDEC_RemoteControl(ChanID, eCmdID, pArgs, ParamLength);
     }
 
-    SecPrint(PRN_FATAL, "%s %d eCmdID = %d exit\n", __func__, __LINE__, eCmdID);
+    //SecPrint(PRN_FATAL, "%s %d eCmdID = %d exit\n", __func__, __LINE__, eCmdID);
 
     Up_Interruptible_with_Option(&g_stSem_s);
 
