@@ -29,6 +29,10 @@ ifeq ($(CFG_ANDROID_TVOS),y)
 EXTRA_CFLAGS += -DHI_TVOS_SUPPORT
 endif
 
+ifeq ($(CONFIG_HI_TEE_SUPPORT),y)
+EXTRA_CFLAGS += -DHI_OMX_TEE_SUPPORT
+endif
+
 MOD_NAME := hi_omxvdec
 
 obj-y += $(MOD_NAME).o

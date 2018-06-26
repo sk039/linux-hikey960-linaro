@@ -3,3 +3,8 @@ config HISILICON_VENDOR
 	help
 	  It includes HiSilicon vendor drivers to support multimedia
 	  functions like graphic, audio, video etc.
+
+config HI_TEE_SUPPORT
+	bool "HiSilicon TEE support"
+	help
+	  It includes omxvdec, vfmw, vdec ... enable TEE function.
