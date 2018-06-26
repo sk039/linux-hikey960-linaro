@@ -70,7 +70,7 @@ extern HI_U32	g_CompressEnable;
 
 
 /*================ GLOBAL VALUE ================*/
-HI_U32	g_TraceOption		= 0; //(1<<OMX_FATAL)+(1<<OMX_ERR);
+HI_U32	g_TraceOption		= (1<<OMX_FATAL)+(1<<OMX_ERR);
 HI_BOOL g_SaveRawEnable		= HI_FALSE;
 HI_BOOL g_SaveYuvEnable		= HI_FALSE;
 HI_BOOL g_SaveSrcYuvEnable	= HI_FALSE;
