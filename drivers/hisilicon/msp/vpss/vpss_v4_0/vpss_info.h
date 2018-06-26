@@ -9,13 +9,16 @@
 #include "hi_drv_vpss.h"
 #include "vpss_osal.h"
 
-#define DEF_DBG_CMD_YUV	   "saveyuv"
-#define DEF_DBG_CMD_YUVIDX    "saveyuvidx"
-#define DEF_DBG_CMD_YUVFILE    "saveyuvfile"
-#define DEF_DBG_CMD_REVISEIMGWH	   "setsrcwh"
+#define VPSS_CODE_VERSION       "2018-5-31"
+#define VPSS_CODE_MODE          "Normal"
 
-#define DEF_DBG_CMD_STREAM "savestream"
-#define DEF_DBG_CMD_FRAME_INFO	  "printinfo"
+#define DEF_DBG_CMD_YUV         "saveyuv"
+#define DEF_DBG_CMD_YUVIDX      "saveyuvidx"
+#define DEF_DBG_CMD_YUVFILE     "saveyuvfile"
+#define DEF_DBG_CMD_REVISEIMGWH "setsrcwh"
+#define DEF_DBG_CMD_LBOXCOLOR   "setcolor"
+#define DEF_DBG_CMD_STREAM      "savestream"
+#define DEF_DBG_CMD_FRAME_INFO  "printinfo"
 #define DEF_DBG_CMD_NONE   "none"
 #define DEF_DBG_CMD_UHD_HIGH "high"
 #define DEF_DBG_CMD_UHD_MIDDLE "middle"
@@ -60,7 +63,7 @@
 #define DEF_DBG_PORT2_ID  0x3
 #define DEF_DBG_SRC_PORT_BUT 0xFFFFFFFF
 
-#define DEF_SDK_VERSIO_LOG "2016081200"
+#define DEF_SDK_VERSIO_LOG "1111111111"
 typedef enum hiVPSS_DEBUG_E
 {
     DBG_W_YUV = 0,

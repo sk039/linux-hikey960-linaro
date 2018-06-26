@@ -12,7 +12,9 @@ extern "C" {
 #define VFMW_MODIFICATION_DATE	     "2017-12-19-00"
 #define VFMW_MATCH_VERSION	 "LIB-20171123-000"
 
-#define VFMW_VPSS_BYPASS_EN
+#ifndef VFMW_VPSS_BYPASS_EN
+    #define VFMW_VPSS_BYPASS_EN
+#endif
 
 #define VP9_DYNAMIC_FSP_EN
 

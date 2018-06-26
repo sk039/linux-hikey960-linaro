@@ -41,6 +41,8 @@ endif
 
 EXTRA_CFLAGS += -DPRE_ALLOC_VDEC_VDH_MMZ=0
 
+EXTRA_CFLAGS += -DVFMW_VPSS_BYPASS_EN
+
 MOD_NAME := hi_vdec
 
 obj-y += $(MOD_NAME).o

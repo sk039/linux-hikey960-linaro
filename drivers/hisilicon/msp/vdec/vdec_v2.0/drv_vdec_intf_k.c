@@ -117,7 +117,7 @@ extern "C" {
 #define HI_VDEC_RESOCHANGE_MASK (0x1)
 #define HI_VDEC_CLOSEDEI_MASK	(0x2) /* Close deinterlace */
 
-#define HI_VDEC_CC_FROM_IMAGE (1)
+#define HI_VDEC_CC_FROM_IMAGE (0)
 
 #define HI_VDEC_FRAME_SIZE_1080P    (3600 * 1024)
 #define HI_VDEC_FRAME_SIZE_2160P    (8100 * 1024)
@@ -14450,13 +14450,13 @@ static HI_S32 VDEC_Ioctl_GolbaRelease(struct file*  filp, unsigned int cmd, void
     if (s32Ret != HI_SUCCESS)
     {
 //TO DO
-#if 0
+//#if 0
 #ifdef ANDROID
 	s32Ret = decoder_global_release_frame(&((VDEC_CMD_GLOBAL_REL_FRM_S*)arg)->FrmInfo);
 
 	if (s32Ret != HI_SUCCESS)
 #endif
-#endif
+//#endif
 	{
 	    HI_ERR_VDEC("HI_DRV_VDEC_GlobalRelFrm err!:%d\n", s32Ret);
 	}

@@ -102,7 +102,7 @@ SINT32 VFMW_UC_Com_Process(VFMW_UCC_DATA *pUccData)
 	goto EXIT;
     }
 
-    if (OSAL_WaitEvent(&pMsgNode->stMsgData.stCmdEvent, 1000) != OSAL_OK)
+    if (OSAL_WaitEvent(&pMsgNode->stMsgData.stCmdEvent, 5000) != OSAL_OK)
     {
 	dprint(PRN_ERROR, "%s OSAL_WaitEvent timeout!!! eHandID %d, CmdID %d, RetValue = 0x%x\n", __func__, pMsgNode->stMsgData.eHandID, pMsgNode->stMsgData.CmdID, pMsgNode->stMsgData.s32RetValue);
     }

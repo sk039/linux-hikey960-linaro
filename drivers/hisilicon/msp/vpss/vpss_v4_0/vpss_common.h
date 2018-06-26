@@ -17,8 +17,8 @@
 #include <linux/delay.h>
 #include"drv_vdec_ext.h"
 
-#define VPSS_CODE_TIMESTAMP	  "2017-3-9 14:37:22"
-#define VPSS_CODE_LASTGITNO	  "a057738946d2c16638f22b3ccceb18824eb7a8e4"
+#define VPSS_CODE_TIMESTAMP	  "2018-5-31 10:10"
+#define VPSS_CODE_LASTGITNO	  "5ba1969d5a9ad0c56dc4b1cf65494630ff5f70c9"
 
 #define DEF_FILE_NAMELENGTH 64
 typedef struct list_head LIST;
