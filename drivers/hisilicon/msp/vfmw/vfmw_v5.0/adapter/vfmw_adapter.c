@@ -13,7 +13,9 @@
 #endif
 
 #include "user_client.h"
+#ifdef VDH_DISTRIBUTOR_ENABLE
 #include "vdh_distributor.h"
+#endif
 #include "vfmw_write_yuv.h"
 
 /*======================================================================*/

@@ -6,7 +6,9 @@
 #include "vdm_hal_local.h"
 #include "dsp_v100_avsp.h"
 #include "dsp_v100_h264.h"
+#ifdef VDH_DISTRIBUTOR_ENABLE
 #include "vdh_distributor.h"
+#endif
 #include "user_client_com.h"
 
 

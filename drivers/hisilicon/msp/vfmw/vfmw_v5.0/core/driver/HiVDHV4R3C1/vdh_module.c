@@ -6,7 +6,9 @@
 
 //#include "scd_drv.h"
 #include "vdm_hal_local.h"  //#include "vdm_hal_v4r3c1_local.h"
+#ifdef VDH_DISTRIBUTOR_ENABLE
 #include "vdh_module.h"
+#endif
 #ifdef VFMW_MODULE_LOWDLY_SUPPORT
 #include "hi_drv_stat.h"
 #endif
