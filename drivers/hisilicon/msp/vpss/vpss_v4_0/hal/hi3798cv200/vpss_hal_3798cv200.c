@@ -471,7 +471,6 @@ HI_S32 VPSS_HAL_SetZmeCfg(VPSS_IP_E enIP, HI_U32 *pu32AppVir,
 			  VPSS_REG_PORT_E enPort,
 			  HI_U32 u32PortCnt)
 {
-#if 1
     VPSS_HAL_PORT_INFO_S *pstHalPort = HI_NULL;
     HI_PQ_ZME_PARA_IN_S stZmeDrvPara;
     HI_PQ_ZME_PARA_IN_S *pstZmeDrvPara;
@@ -680,7 +679,19 @@ HI_S32 VPSS_HAL_SetZmeCfg(VPSS_IP_E enIP, HI_U32 *pu32AppVir,
 		      (VPSS_REG_S *)pu32AppVir,
 		      pstZmeDrvPara,
 		      HI_TRUE);
-#endif
+    if ((pstZmeDrvPara->u32ZmeFrmHIn != pstZmeDrvPara->u32ZmeFrmHOut)
+        || (pstZmeDrvPara->u32ZmeFrmWIn != pstZmeDrvPara->u32ZmeFrmWOut)
+        || (pstZmeDrvPara->u8ZmeYCFmtIn != pstZmeDrvPara->u8ZmeYCFmtOut))
+    {
+        VPSS_REG_SetZmeEnable(pu32AppVir, enPort, REG_ZME_MODE_ALL, HI_TRUE);
+        VPSS_REG_SetZmeGlbEnable(pu32AppVir, HI_TRUE);
+    }
+    else
+    {
+        VPSS_REG_SetZmeEnable(pu32AppVir, enPort, REG_ZME_MODE_ALL, HI_FALSE);
+        VPSS_REG_SetZmeGlbEnable(pu32AppVir, HI_FALSE);
+    }
+
     return HI_SUCCESS;
 }
 HI_BOOL VPSS_HAL_CheckNeedCmp(VPSS_HAL_FRAME_S *pstOutFrm)
@@ -901,7 +912,7 @@ HI_S32 VPSS_HAL_SetPortCropCfg(VPSS_IP_E enIP,
     pstInCropRect = &(pstHalPort->stOutCropRect);
 
     //4pixel align
-	pstInCropRect->s32Width = pstInCropRect->s32Width & VPSS_HEIGHT_ALIGN;
+    pstInCropRect->s32Width = ((HI_U32)pstInCropRect->s32Width) & VPSS_WIDTH_ALIGN_4PIXELCLK;
 
     if (pstHalInfo->enNodeType == VPSS_HAL_NODE_2D_Field)
     {
@@ -932,7 +943,17 @@ HI_S32 VPSS_HAL_SetPortCropCfg(VPSS_IP_E enIP,
     VPSS_REG_SetPortCropPos(pu32AppVir, enPort, u32CropY, u32CropX);
     VPSS_REG_SetPortCropSize(pu32AppVir, enPort, u32CropHeight, u32CropWidth);
 
+    if ((0 == u32CropX)
+        && (0 == u32CropY)
+        && (pstInInfo->u32Width == u32CropWidth)
+        && (pstInInfo->u32Height == u32CropHeight))
+    {
+        VPSS_REG_SetPortCropEn(pu32AppVir, HI_FALSE);
+    }
+    else
+    {
     VPSS_REG_SetPortCropEn(pu32AppVir, HI_TRUE);
+    }
 
     return HI_SUCCESS;
 }
@@ -1074,8 +1095,6 @@ HI_S32 VPSS_HAL_SetPortCfg(VPSS_IP_E enIP, HI_U32 *pu32AppVir, HI_U32 u32AppPhy,
 	    /*ZME*/
 	    VPSS_HAL_SetZmeCfg(enIP, pu32AppVir, pstHalInfo, enPort, u32Count);
 	    VPSS_REG_SetAddr(pu32AppVir, REG_VPSS_ZME_ADDR, VPSS_ZME_ADDR_GET(u32AppPhy));
-	    VPSS_REG_SetZmeEnable(pu32AppVir, enPort, REG_ZME_MODE_ALL, HI_TRUE);
-	    VPSS_REG_SetZmeGlbEnable(pu32AppVir, HI_TRUE);
 
 	    /* LBX */
 	    VPSS_REG_SetLBABg(pu32AppVir, enPort, 0x02080200, 0x7f);
@@ -1086,8 +1105,18 @@ HI_S32 VPSS_HAL_SetPortCfg(VPSS_IP_E enIP, HI_U32 *pu32AppVir, HI_U32 u32AppPhy,
 				  pstHalPort->stVideoRect.s32Width);
 	    VPSS_REG_SetLBADispPos(pu32AppVir, enPort, 0, 0,
 				   pstOutFrm->u32Height, pstOutFrm->u32Width);
+            if ((0 != pstHalPort->stVideoRect.s32X)
+                || (0 != pstHalPort->stVideoRect.s32Y)
+                || (pstHalPort->stVideoRect.s32Height != pstOutFrm->u32Height)
+                || (pstHalPort->stVideoRect.s32Width != pstOutFrm->u32Width)
+               )
+            {
 	    VPSS_REG_SetLBAEn(pu32AppVir, enPort, HI_TRUE);
-
+            }
+            else
+            {
+                VPSS_REG_SetLBAEn(pu32AppVir, enPort, HI_FALSE);
+            }
 
 	    VPSS_DBG_INFO("lbox disp x y w h %d %d %d %d, vw%d, vh%d\n", pstHalPort->stVideoRect.s32X ,
 			  pstHalPort->stVideoRect.s32Y,
@@ -2081,6 +2110,10 @@ HI_S32 VPSS_HAL_SetFrameNode(VPSS_IP_E enIP, VPSS_HAL_INFO_S *pstHalInfo,
 	VPSS_REG_SetRfrEn(pu32AppVir, HI_TRUE);/* Ĭ�ϰѻ�д�� */
 	VPSS_REG_SetTNrEn(pu32AppVir, HI_TRUE);/* Ĭ�ϰ�TNR�� */
 	VPSS_REG_SetSNrEn(pu32AppVir, HI_TRUE);/* Ĭ�ϰ�SNR�� */
+    }
+    if (0x0 != (pstHalInfo->stInInfo.u32Width & 0x3))
+    {
+        VPSS_REG_SetTNrEn(pu32AppVir, HI_FALSE);
     }
 #if 1
     /*rwzb*/

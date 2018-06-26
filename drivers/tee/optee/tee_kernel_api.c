@@ -434,13 +434,12 @@ TEEC_Result TEEK_OpenSession(TEEC_Context *context,
 	}
 
 	rc = tee_client_open_session(ctx, arg, params);
-	if (rc) {
+	if (rc < 0) {
 		pr_err("%s failed rc:%d\n", __func__, rc);
 		res = linux_errno_to_res(rc);
 		eorig = TEEC_ORIGIN_COMMS;
 		goto out_free_temp_refs;
 	}
-
 	res = arg->ret;
 	eorig = arg->ret_origin;
 	if (res == TEEC_SUCCESS) {
@@ -454,6 +453,7 @@ out_free_temp_refs:
 
 	if (ret_origin)
 		*ret_origin = eorig;
+
 	return res;
 }
 EXPORT_SYMBOL(TEEK_OpenSession);
@@ -508,13 +508,12 @@ TEEC_Result TEEK_InvokeCommand(TEEC_Session *session,
 	}
 
 	rc = tee_client_invoke_func(ctx, arg, params);
-	if (rc) {
+	if (rc < 0) {
 		pr_err("%s failed rc:%d\n", __func__, rc);
 		res = linux_errno_to_res(rc);
 		eorig = TEEC_ORIGIN_COMMS;
 		goto out_free_temp_refs;
 	}
-
 	res = arg->ret;
 	eorig = arg->ret_origin;
 	teec_post_process_operation(operation, params, shm);
