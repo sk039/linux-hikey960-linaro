@@ -688,9 +688,6 @@ static HI_S32 AICreateChn(AI_CHN_STATE_S* state)
 	stHwPortAttr.stBufConfig.u32PeriodBufSize = pstAlsaAttr->stBuf.u32PeriodByteSize;
 	stHwPortAttr.stBufConfig.u32PeriodNumber  = pstAlsaAttr->stBuf.u32Periods;
 
-	state->stRbfMmz.u32Size		= pstAlsaAttr->stBuf.u32BufSize;
-	state->stRbfMmz.u32StartPhyAddr = pstAlsaAttr->stBuf.tBufPhyAddr;
-	state->stRbfMmz.pu8StartVirAddr = (HI_U8*)HI_NULL + pstAlsaAttr->stBuf.tBufVirAddr;
     }
     else
     {
@@ -1846,14 +1843,17 @@ static HI_S32 AI_ShowChnProc(struct seq_file* p, HI_U32 u32Chn)
     PROC_PRINT(p,
 	       "FrameBuf(Total/Use/Percent)(Bytes)   :%d/%d/%d%%\n",
 	       pstPortStatus.stBuf.u32BUFF_SIZE, u32BufSizeUsed, u32BufPerCentUsed);
+    if (HI_FALSE == state->bAlsa)
+    {
     PROC_PRINT(p,
-	       "AcquireFrame(Try/OK)		     :%d/%d\n",
-	       state->stAiProcAttr.pstAiProcInfo->u32AqcTryCnt, state->stAiProcAttr.pstAiProcInfo->u32AqcCnt);
+               "AcquireFrame(Try/OK)                 :%d/%d\n",
+               state->stAiProcAttr.pstAiProcInfo->u32AqcTryCnt, state->stAiProcAttr.pstAiProcInfo->u32AqcCnt);
     PROC_PRINT(p,
-	       "ReleaseFrame(Try/OK)		     :%d/%d\n",
-	       state->stAiProcAttr.pstAiProcInfo->u32RelTryCnt, state->stAiProcAttr.pstAiProcInfo->u32RelCnt);
+               "ReleaseFrame(Try/OK)                 :%d/%d\n",
+               state->stAiProcAttr.pstAiProcInfo->u32RelTryCnt, state->stAiProcAttr.pstAiProcInfo->u32RelCnt);
+    }
     PROC_PRINT( p,
-		"-----------------------------------------------------------\n");
+                "-----------------------------------------------------------\n");
 
     return HI_SUCCESS;
 }
