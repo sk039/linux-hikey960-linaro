@@ -369,6 +369,33 @@ struct tee_ioctl_shm_register_data {
  */
 #define TEE_IOC_SHM_REGISTER   _IOWR(TEE_IOC_MAGIC, TEE_IOC_BASE + 9, \
 				     struct tee_ioctl_shm_register_data)
+/**
+ * TEE_IOC_AGENT_REGISTER - Register a userspace agent with the optee driver
+ */
+#define TEE_IOC_AGENT_REGISTER	_IOR(TEE_IOC_MAGIC, TEE_IOC_BASE + 8, \
+				     unsigned int)
+
+/**
+ * TEE_IOC_AGENT_UNREGISTER - Unregister a userspace agent with the optee driver
+ */
+#define TEE_IOC_AGENT_UNREGISTER	_IOR(TEE_IOC_MAGIC, TEE_IOC_BASE + 9,\
+					     unsigned int)
+
+struct tee_ioctl_agent_arg{
+	__u32 agent_id;
+	struct tee_ioctl_buf_data buf;
+};
+/**
+ * TEE_IOC_AGENT_RECV - Receive a rpc call to this agent from the OPTEE-OS(TA)
+ */
+#define TEE_IOC_AGENT_RECV	_IOR(TEE_IOC_MAGIC, TEE_IOC_BASE + 10,\
+				     struct tee_ioctl_agent_arg)
+
+/**
+ * TEE_IOC_AGENT_SEND - Send the rpc call response back the OPTEE-OS(TA)
+ */
+#define TEE_IOC_AGENT_SEND	_IOR(TEE_IOC_MAGIC, TEE_IOC_BASE + 11, \
+				     struct tee_ioctl_agent_arg)
 /*
  * Five syscalls are used when communicating with the TEE driver.
  * open(): opens the device associated with the driver

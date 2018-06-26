@@ -441,4 +441,9 @@ struct optee_msg_arg {
  */
 #define OPTEE_MSG_RPC_CMD_SHM_FREE	7
 
+/*
+ * user defined Agentcall from TEE to REE
+ */
+#define OPTEE_MSG_RPC_CMD_AGENT	8
+
 #endif /* _OPTEE_MSG_H */

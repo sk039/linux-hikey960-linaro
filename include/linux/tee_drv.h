@@ -20,6 +20,7 @@
 #include <linux/kref.h>
 #include <linux/list.h>
 #include <linux/tee.h>
+#include <linux/device.h>
 
 /*
  * The file describes the API provided by the generic TEE driver to the
@@ -111,6 +112,13 @@ struct tee_driver_ops {
 			    struct page **pages, size_t num_pages,
 			    unsigned long start);
 	int (*shm_unregister)(struct tee_context *ctx, struct tee_shm *shm);
+	int (*agent_register)(struct tee_context *ctx, u32 agent_id);
+	int (*agent_unregister)(struct tee_context *ctx, u32 agent_id);
+	int (*agent_recv)(struct tee_context *ctx, u32 agent_id,
+			  struct tee_ioctl_buf_data *ubuf);
+	int (*agent_send)(struct tee_context *ctx, u32 agent_id,
+			  struct tee_ioctl_buf_data *ubuf);
+
 };
 
 /**
@@ -129,6 +137,24 @@ struct tee_desc {
 };
 
 /**
+ * struct tee_agent_kernel_ops - Describes the REE kernel agent
+ * @agent name:		name of the agent, can't be null
+ * @agent_id:		identifier of the agent, must be unique in system
+ * @agent_data:		private pointer which is passback by the agent callback
+ * @mutex:		protect the callback from reentrant, initialize by owner
+ * @avail:		protect the TEE agent call from the agent_unregister
+ * @tee_agent_run:	callback function of the Agent
+ */
+struct tee_agent_kernel_ops {
+        const char *agent_name;
+        unsigned int agent_id;
+        void *agent_data;
+        struct mutex mutex;
+        bool avail;
+        int (*tee_agent_run)(void *, void *, unsigned int);
+};
+
+/**
  * tee_device_alloc() - Allocate a new struct tee_device instance
  * @teedesc:	Descriptor for this driver
  * @dev:	Parent device for this device
@@ -144,6 +170,10 @@ struct tee_device *tee_device_alloc(const struct tee_desc *teedesc,
 				    struct device *dev,
 				    struct tee_shm_pool *pool,
 				    void *driver_data);
+
+int tee_agent_kernel_register(struct tee_agent_kernel_ops *tee_ops);
+
+int tee_agent_kernel_unregister(struct tee_agent_kernel_ops *tee_ops);
 
 /**
  * tee_device_register() - Registers a TEE device
@@ -537,5 +567,9 @@ int tee_client_close_session(struct tee_context *ctx, u32 session);
 int tee_client_invoke_func(struct tee_context *ctx,
 			   struct tee_ioctl_invoke_arg *arg,
 			   struct tee_param *param);
+
+int tee_agent_kernel_register(struct tee_agent_kernel_ops *tee_ops);
+
+int tee_agent_kernel_unregister(struct tee_agent_kernel_ops *tee_ops);
 
 #endif /*__TEE_DRV_H*/

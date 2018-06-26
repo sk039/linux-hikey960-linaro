@@ -254,6 +254,7 @@ static int optee_open(struct tee_context *ctx)
 
 	mutex_init(&ctxdata->mutex);
 	INIT_LIST_HEAD(&ctxdata->sess_list);
+	INIT_LIST_HEAD(&ctxdata->agent_list);
 
 	ctx->data = ctxdata;
 	return 0;
@@ -287,6 +288,8 @@ static void optee_release(struct tee_context *ctx)
 				arg = NULL; /* prevent usage of parg below */
 	}
 
+	optee_agent_release(ctx);
+
 	list_for_each_entry_safe(sess, sess_tmp, &ctxdata->sess_list,
 				 list_node) {
 		list_del(&sess->list_node);
@@ -319,6 +322,10 @@ static const struct tee_driver_ops optee_ops = {
 	.cancel_req = optee_cancel_req,
 	.shm_register = optee_shm_register,
 	.shm_unregister = optee_shm_unregister,
+	.agent_register = optee_agent_register,
+	.agent_unregister = optee_agent_unregister,
+	.agent_recv = optee_agent_recv,
+	.agent_send = optee_agent_send,
 };
 
 static const struct tee_desc optee_desc = {

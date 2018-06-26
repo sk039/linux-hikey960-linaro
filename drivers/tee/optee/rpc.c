@@ -149,6 +149,41 @@ bad:
 	arg->ret = TEEC_ERROR_BAD_PARAMETERS;
 }
 
+static void handle_rpc_func_cmd_agent(struct optee_msg_arg *arg)
+{
+	struct optee_msg_param *params;
+	struct tee_shm *shm;
+	void *shm_va;
+	unsigned int cmd, shm_size;
+	int ret = 0;
+
+	if (arg->num_params != 2)
+		goto bad;
+	params = &(arg->params[0]);
+	if (((params[0].attr & OPTEE_MSG_ATTR_TYPE_MASK) !=
+	     OPTEE_MSG_ATTR_TYPE_VALUE_INPUT) ||
+	    ((params[1].attr & OPTEE_MSG_ATTR_TYPE_MASK) !=
+	     OPTEE_MSG_ATTR_TYPE_TMEM_INOUT))
+		goto bad;
+
+	/*
+	 * shm can be null if the agent take one arg
+	 * we keep two params just for compatibility
+	 **/
+	cmd = params[0].u.value.a;
+	shm = (struct tee_shm *)(unsigned long)(params[1].u.tmem.shm_ref);
+	shm_size = (unsigned int)params[1].u.tmem.size;
+	shm_va = shm ? tee_shm_get_va(shm, 0) : NULL;
+
+	ret = optee_tee_agent_cmd(cmd, shm_va, shm_size);
+	if (ret)
+		goto bad;
+
+	arg->ret = TEEC_SUCCESS;
+	return;
+bad:
+	arg->ret = TEEC_ERROR_COMMUNICATION;
+}
 static void handle_rpc_supp_cmd(struct tee_context *ctx,
 				struct optee_msg_arg *arg)
 {
@@ -390,6 +425,9 @@ static void handle_rpc_func_cmd(struct tee_context *ctx, struct optee *optee,
 		break;
 	case OPTEE_MSG_RPC_CMD_SHM_FREE:
 		handle_rpc_func_cmd_shm_free(ctx, arg);
+		break;
+	case OPTEE_MSG_RPC_CMD_AGENT:
+		handle_rpc_func_cmd_agent(arg);
 		break;
 	default:
 		handle_rpc_supp_cmd(ctx, arg);
