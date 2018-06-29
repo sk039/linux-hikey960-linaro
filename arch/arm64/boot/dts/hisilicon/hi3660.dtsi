@@ -653,7 +653,7 @@
 				 <&crg_ctrl HI3660_PCLK>;
 			clock-names = "uartclk", "apb_pclk";
 			pinctrl-names = "default";
-			pinctrl-0 = <&uart6_pmx_func &uart6_cfg_func>;
+			pinctrl-0 = <&uart6_pmx_func>;
 			status = "disabled";
 		};
 
