@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 export ARCH=arm64
+# wget https://releases.linaro.org/components/toolchain/binaries/6.4-2018.05/aarch64-elf/gcc-linaro-6.4.1-2018.05-x86_64_aarch64-elf.tar.xz
+# tar -xf gcc-linaro-6.4.1-2018.05-x86_64_aarch64-elf.tar.xz -C /opt
 export CROSS_COMPILE=/opt/gcc-linaro-6.4.1-2018.05-x86_64_aarch64-elf/bin/aarch64-elf-
 export TOPDIR=$(pwd)
 export KERN_REL=$(make kernelrelease)
+export TMPDIR=`mktemp -d`
 
 make all 
-TMPDIR=`mktemp -d`
 
 cd $TMPDIR
 cat $TOPDIR/initrd.img | gunzip | cpio -idum
